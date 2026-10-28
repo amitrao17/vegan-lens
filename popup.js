@@ -1,5 +1,5 @@
 const DEFAULTS = { checkAds: true, enabled: true, mode: 'dim', strictness: 'strict', showSwaps: true, groceryMode: 'hide',
-  webEnabled: true, webMode: 'dim', sensitivity: 'med', siteBlock: [], siteAllow: [], pageBlock: [], webAllowOnly: false, contextCards: true, markPeople: true, markMeat: true, searchAssist: 'suggest', whitelist: [], whitelistDisabled: [], debug: false };
+  webEnabled: true, webMode: 'dim', sensitivity: 'med', siteBlock: [], siteAllow: [], pageBlock: [], webAllowOnly: false, contextCards: true, markPeople: true, markMeat: true, hideMeatSections: true, searchAssist: 'suggest', whitelist: [], whitelistDisabled: [], debug: false };
 const SENS = ['low', 'med', 'high'];
 const $ = id => document.getElementById(id);
 const toList = v => v.split(/[\s,]+/).map(d => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')).filter(Boolean);
@@ -13,7 +13,7 @@ $('resetTotal').addEventListener('click', e => { e.preventDefault(); if (confirm
 
 chrome.storage.sync.remove('sortTop'); // 0.4.0: sort-to-top removed; drop any stored value
 chrome.storage.sync.get(DEFAULTS, s => {
-  for (const k of ['enabled', 'mode', 'strictness', 'showSwaps', 'groceryMode', 'webEnabled', 'webMode', 'webAllowOnly', 'contextCards', 'markPeople', 'markMeat', 'searchAssist', 'checkAds', 'debug']) {
+  for (const k of ['enabled', 'mode', 'strictness', 'showSwaps', 'groceryMode', 'webEnabled', 'webMode', 'webAllowOnly', 'contextCards', 'markPeople', 'markMeat', 'hideMeatSections', 'searchAssist', 'checkAds', 'debug']) {
     const el = $(k);
     if (el.type === 'checkbox') el.checked = s[k]; else el.value = s[k];
     el.addEventListener('change', () => set({ [k]: el.type === 'checkbox' ? el.checked : el.value }));

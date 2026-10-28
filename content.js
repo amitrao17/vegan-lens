@@ -4,7 +4,7 @@
   const P = window.VeganPage, A = window.VeganAdUnits, W = window.VeganSwaps, V = window.VeganSites;
   const SITE = (V && V.siteOf(location.hostname)) || 'amazon'; // 'amazon' | 'grocery'
   const GROCERY = SITE === 'grocery';
-  const DEFAULTS = { checkAds: true, enabled: true, mode: 'dim', strictness: 'strict', showSwaps: true, groceryMode: 'hide', pageBlock: [], siteBlock: [], whitelist: [], whitelistDisabled: [] };
+  const DEFAULTS = { checkAds: true, enabled: true, mode: 'dim', strictness: 'strict', showSwaps: true, groceryMode: 'hide', pageBlock: [], siteBlock: [], whitelist: [], whitelistDisabled: [], hideMeatSections: true };
   let S = { ...DEFAULTS };
   const M = () => V ? V.effectiveMode(SITE, S) : S.mode; // Amazon: S.mode; grocery sites: S.groceryMode (default hide)
   let revealed = false; // user clicked "show" on the grocery hidden-items notice
@@ -231,6 +231,7 @@
   function run() {
     if (location.href !== lastUrl) { lastUrl = location.href; try { chrome.runtime.sendMessage({ type: 'reset' }); } catch (e) {} P.reportPage(); if (GROCERY || P.isDisabled(S, location.href)) undo(); }
     if (P.isDisabled(S, location.href)) return; // disabled on this page: do nothing
+    if (V && V.hideSections) V.hideSections(document, V.sectionRulesFor(location.hostname, S)); // store sections (own toggle)
     if (!S.enabled) { report(); return; }
     AD.tiles().forEach(el => processResult(el));
     if (!GROCERY && S.checkAds) document.querySelectorAll(AD_WIDGETS).forEach(w => w.querySelectorAll('[data-asin]:not([data-asin=""])').forEach(el => processResult(el, true)));
@@ -239,6 +240,7 @@
     report();
   }
   function undo() {
+    if (V && V.restoreSections) V.restoreSections(document);
     document.querySelectorAll('[data-vl-done], .vl-item').forEach(clear);
     document.getElementById('vl-banner')?.remove();
     document.getElementById('vl-hidden-notice')?.remove(); revealed = false;

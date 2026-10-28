@@ -118,7 +118,59 @@
     try { const u = new URL(origin); if (/^https?:$/.test(u.protocol) && GROCERY_HOST.test(u.hostname)) o = u.origin; } catch (e) {}
     return (o || 'https://giantfood.com') + '/product-search/' + encodeURIComponent(query);
   }
+
+  // ---------- section hider (generic; per-site rules) ----------
+  // Hides store navigation entries (category bar tiles, Categories mega-menu, search-page category filters)
+  // matched by link href or exact visible text - never by the site's CSS classes.
+  // A rule: { hosts: RegExp, sections: [{ name, texts: [exact labels], href: RegExp }] }.
+  const SECTION_RULES = [
+    { id: 'grocery-meat-dairy', setting: 'hideMeatSections', hosts: GROCERY_HOST, sections: [
+      { name: 'Meat', texts: ['meat'], href: /\/categories\/(?:\d+\/)*(?:categories\/)?\d+-meat(?:[\/?#]|$)/i },
+      { name: 'Seafood', texts: ['seafood'], href: /\/categories\/(?:\d+\/)*(?:categories\/)?\d+-seafood(?:[\/?#]|$)/i },
+      { name: 'Dairy & Eggs', texts: ['dairy & eggs', 'dairy and eggs', 'dairy & egg'], href: /\/categories\/(?:\d+\/)*(?:categories\/)?\d+-dairy-eggs(?:[\/?#]|$)/i },
+    ] },
+  ];
+  const SECTION_CANDIDATES = 'a[href], button, label, [role=menuitem], [role=option], [role=treeitem], [role=checkbox]';
+  const SEC_HIDDEN = 'vl-sec-hidden';
+  const secText = t => String(t || '').replace(/\u00a0/g, ' ').replace(/\(\s*[\d,]+\s*\)/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  function sectionRulesFor(host, settings) {
+    const st = settings || {};
+    return SECTION_RULES.filter(r => r.hosts.test(String(host || '')) && st[r.setting] !== false);
+  }
+  // Which section (if any) an element names. Exact text only, so "Deli & Prepared Food" or "Meat Alternatives" never match.
+  function sectionOf(el, rules) {
+    const href = el.getAttribute && el.getAttribute('href');
+    const txt = secText(el.textContent);
+    for (const r of rules) for (const sec of r.sections) {
+      if (href && sec.href.test(href)) return sec;
+      if (!href && txt && sec.texts.includes(txt)) return sec;
+      if (href && txt && sec.texts.includes(txt) && !/^https?:|^\//.test(href)) return sec;
+    }
+    return null;
+  }
+  // The element to hide: the enclosing list item when it holds only this entry, otherwise the entry itself.
+  function sectionContainer(el) {
+    const li = el.closest && el.closest('li, [role=menuitem], [role=option], [role=treeitem]');
+    if (li && li !== el && li.querySelectorAll(SECTION_CANDIDATES).length <= 2) return li;
+    return el;
+  }
+  function hideSections(root, rules) {
+    const hit = [];
+    if (!rules || !rules.length || !root || !root.querySelectorAll) return hit;
+    root.querySelectorAll(SECTION_CANDIDATES).forEach(el => {
+      if (el.closest && el.closest('.' + SEC_HIDDEN)) return;
+      const sec = sectionOf(el, rules); if (!sec) return;
+      const c = sectionContainer(el);
+      c.classList.add(SEC_HIDDEN); c.setAttribute('data-vl-sec', sec.name); hit.push({ el: c, name: sec.name });
+    });
+    return hit;
+  }
+  function restoreSections(root) {
+    if (!root || !root.querySelectorAll) return 0;
+    let n = 0; root.querySelectorAll('.' + SEC_HIDDEN).forEach(el => { el.classList.remove(SEC_HIDDEN); el.removeAttribute('data-vl-sec'); n++; });
+    return n;
+  }
   const hiddenNotice = n => `Vegan Lens hid ${n} non-vegan item${n === 1 ? '' : 's'}`;
-  const api = { GROCERY_HOST, GROCERY_MATCHES, siteOf, effectiveMode, parseAllergens, stripPrecautionary, allergenLabel, isProductHref, hrefKey, productHrefs, tileFromLink, findTiles, titleOfTile, detailTitleEl, amazonTitleOf, idOfTile, isSponsored, groceryDetailText, swapUrl, hiddenNotice, TILE_SEL, LINK_SEL };
+  const api = { GROCERY_HOST, GROCERY_MATCHES, siteOf, effectiveMode, parseAllergens, stripPrecautionary, allergenLabel, isProductHref, hrefKey, productHrefs, tileFromLink, findTiles, titleOfTile, detailTitleEl, amazonTitleOf, idOfTile, isSponsored, groceryDetailText, swapUrl, hiddenNotice, TILE_SEL, LINK_SEL, SECTION_RULES, SECTION_CANDIDATES, SEC_HIDDEN, sectionRulesFor, sectionOf, sectionContainer, hideSections, restoreSections };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.VeganSites = api;
 })(typeof self !== 'undefined' ? self : this);
