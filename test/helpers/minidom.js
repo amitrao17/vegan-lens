@@ -9,6 +9,8 @@ class Node {
   get tagName() { return this.tag.toUpperCase(); }
   get className() { return this.attrs.class || ''; }
   getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+  setAttribute(k, v) { this.attrs[k] = String(v); }
+  get dataset() { const a = this.attrs; return new Proxy({}, { get: (_, k) => a['data-' + String(k).replace(/[A-Z]/g, c => '-' + c.toLowerCase())] }); }
   get textContent() { return this.children.map(c => typeof c === 'string' ? c : c.textContent).join(''); }
   get innerText() { return this.children.map(c => typeof c === 'string' ? c : (BLOCK.has(c.tag) ? '\n' + c.innerText + '\n' : c.innerText)).join('').replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n'); }
   _all() { const o = []; for (const c of this.children) if (typeof c !== 'string') o.push(c, ...c._all()); return o; }

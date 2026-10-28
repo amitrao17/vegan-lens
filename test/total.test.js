@@ -18,7 +18,7 @@ test('popup shows version and total UI', () => {
   assert.match(h, /id="version"/); assert.match(h, /Non-vegan items detected/); assert.match(h, /id="resetTotal"/);
   assert.match(j, /getManifest\(\)\.version/); assert.match(j, /confirm\(/);
 });
-test('versions agree at 0.4.8 and background loads total.js', () => {
-  assert.strictEqual(require('../manifest.json').version, '0.4.8'); assert.strictEqual(require('../package.json').version, '0.4.8');
+test('versions agree at 0.4.9 and background loads total.js', () => {
+  assert.strictEqual(require('../manifest.json').version, '0.4.9'); assert.strictEqual(require('../package.json').version, '0.4.9');
   assert.match(fs.readFileSync(__dirname + '/../background.js', 'utf8'), /importScripts\([^)]*'total\.js'/);
 });

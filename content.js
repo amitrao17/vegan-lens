@@ -43,7 +43,7 @@
   // Per-site adapters: how to find result tiles, their title/id, and sponsored status.
   const ADAPTERS = {
     amazon: { tiles: () => document.querySelectorAll(RESULT_SEL), title: titleOf, id: el => el.getAttribute('data-asin'), isAd: el => A.isAmazonSponsored(el), detail: () => processDetail() },
-    grocery: { tiles: () => V.findTiles(document), title: el => V.titleOfTile(el), id: el => V.idOfTile(el), isAd: el => V.isSponsored(el), detail: () => processGroceryDetail() },
+    grocery: { tiles: () => [...V.findTiles(document), ...V.findPromoCards(document)], title: el => el.dataset.vlPromo ? V.promoTitleOf(el) : V.titleOfTile(el), id: el => el.dataset.vlPromo ? 'promo:' + V.promoTitleOf(el) : V.idOfTile(el), isAd: el => V.isSponsored(el), detail: () => processGroceryDetail() },
   };
   const AD = ADAPTERS[SITE];
   function processResult(el, isAdCard) {
@@ -59,6 +59,7 @@
     if (GROCERY) el.dataset.vlId = id;
     if (ad) el.dataset.vlAd = '1';
     const r = C.classify(title, S);
+    if (el.dataset.vlPromo && r.verdict !== 'non-vegan') return; // homepage promo/weekly-ad cards: only hide non-vegan, no badges
     el.dataset.vlVerdict = r.verdict;
     el.classList.add('vl-item');
     if (getComputedStyle(el).position === 'static') el.style.position = 'relative';

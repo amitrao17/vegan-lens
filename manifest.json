@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vegan Lens",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Highlights vegan products and content across the web, and dims non-vegan products, content and ads.",
   "permissions": [
     "storage",

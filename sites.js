@@ -170,7 +170,47 @@
     let n = 0; root.querySelectorAll('.' + SEC_HIDDEN).forEach(el => { el.classList.remove(SEC_HIDDEN); el.removeAttribute('data-vl-sec'); n++; });
     return n;
   }
+
+  // ---------- homepage promo cards ("This Week's Ad" carousel, promo tiles) ----------
+  // Weekly-ad cards have no /product/ link: image, price ("$0.99 /lb."), "Up to $5.00 off", title, "See Eligible Items" button.
+  // Promo tiles: <h2>title</h2><p>subtitle</p><button>Shop now</button>. Matched by button text and structure, not classes.
+  const PROMO_BTN = /^(?:see eligible items|shop now|save now|shop deals?|shop the deals?|view items?)$/i;
+  const NOT_TITLE = /\$|¢|\/\s*lb|\bper lb\b|^\s*\d+\s*(?:\/|for)\s|^up to\b|\boff$|coupon|see eligible|with digital|^(?:shop|save) now$|^sale$|^new$/i;
+  // visible text, skipping inline <svg><title> icon labels (e.g. "Save now" buttons contain an svg titled "Stroke 1")
+  const vtext = n => typeof n === 'string' ? n : n.nodeType === 3 ? n.data : /^(?:svg|script|style|title)$/i.test(n.tagName || '') ? '' : [...(n.childNodes || n.children || [])].map(vtext).join('');
+  const ptext = el => String(vtext(el) || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+  const kids = el => [...(el.children || [])].filter(c => c && typeof c === 'object');
+  function promoCardFrom(btn) {
+    let card = btn, up = btn.parentElement;
+    for (let i = 0; up && i < 8; i++, up = up.parentElement) {
+      const btns = [...up.querySelectorAll('button, a, [role=button]')].filter(b => PROMO_BTN.test(ptext(b)));
+      if (btns.length > 1 || /^(?:body|html|main)$/i.test(up.tagName)) break;
+      card = up;
+    }
+    return card === btn ? null : card;
+  }
+  function promoTitleOf(card) {
+    const h = card.querySelector('h2, h3, h4');
+    if (h && ptext(h)) { const p = card.querySelector('p'); return (ptext(h) + (p ? ' ' + ptext(p) : '')).trim(); }
+    const leaves = [];
+    (function walk(n) { const k = kids(n); if (!k.length || k.every(c => /^(?:br|wbr|svg|img)$/i.test(c.tagName))) { const t = ptext(n); if (t) leaves.push({ n, t }); return; }
+      if (/^(?:svg|script|style)$/i.test(n.tagName)) return; k.forEach(walk); })(card);
+    const cand = leaves.filter(l => !NOT_TITLE.test(l.t) && !PROMO_BTN.test(l.t) && !/^(?:add to (?:list|cart)|view all|coupon available|clip coupon)$/i.test(l.t) && l.t.length >= 3 && /[a-z]/i.test(l.t));
+    if (cand.length) return cand.sort((a, b) => b.t.length - a.t.length)[0].t;
+    const img = card.querySelector('img[alt]'); return img ? String(img.getAttribute('alt')).trim() : '';
+  }
+  function findPromoCards(doc) {
+    const out = [];
+    for (const b of doc.querySelectorAll('button, a, [role=button]')) {
+      if (!PROMO_BTN.test(ptext(b))) continue;
+      const card = promoCardFrom(b); if (!card || out.includes(card)) continue;
+      if (productHrefs(card).size) continue; // real product tiles are handled by findTiles
+      if (!promoTitleOf(card)) continue;
+      card.setAttribute('data-vl-promo', '1'); out.push(card);
+    }
+    return out.filter(c => !out.some(o => o !== c && o.contains(c)));
+  }
   const hiddenNotice = n => `Vegan Lens hid ${n} non-vegan item${n === 1 ? '' : 's'}`;
-  const api = { GROCERY_HOST, GROCERY_MATCHES, siteOf, effectiveMode, parseAllergens, stripPrecautionary, allergenLabel, isProductHref, hrefKey, productHrefs, tileFromLink, findTiles, titleOfTile, detailTitleEl, amazonTitleOf, idOfTile, isSponsored, groceryDetailText, swapUrl, hiddenNotice, TILE_SEL, LINK_SEL, SECTION_RULES, SECTION_CANDIDATES, SEC_HIDDEN, sectionRulesFor, sectionOf, sectionContainer, hideSections, restoreSections };
+  const api = { GROCERY_HOST, GROCERY_MATCHES, siteOf, effectiveMode, parseAllergens, stripPrecautionary, allergenLabel, isProductHref, hrefKey, productHrefs, tileFromLink, findTiles, titleOfTile, detailTitleEl, amazonTitleOf, idOfTile, isSponsored, groceryDetailText, swapUrl, hiddenNotice, TILE_SEL, LINK_SEL, SECTION_RULES, SECTION_CANDIDATES, SEC_HIDDEN, sectionRulesFor, sectionOf, sectionContainer, hideSections, restoreSections, PROMO_BTN, findPromoCards, promoTitleOf, promoCardFrom };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.VeganSites = api;
 })(typeof self !== 'undefined' ? self : this);
