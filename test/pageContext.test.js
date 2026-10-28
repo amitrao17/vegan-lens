@@ -1,4 +1,4 @@
-// v0.4.12: vegan page/channel context + plant "steaks" + meat-rejection phrasing (YouTube @Gesunde-Rezepte false positives).
+// v0.4.13: vegan page/channel context + plant "steaks" + meat-rejection phrasing (YouTube @Gesunde-Rezepte false positives).
 const test = require('node:test'), assert = require('node:assert'), fs = require('fs');
 const C = require('../contentClassifier.js');
 const YT = { requireHeadline: true };
@@ -47,4 +47,9 @@ test('wiring: web.js uses channel/header context, recomputes as cards load, re-c
   assert.match(w, /C\.pageContext\(\{ header: headerText\(\)/);
   assert.match(w, /resetUnit\(u\); processUnit\(u\);/);
   assert.match(w, /pageCtx = \{ vegan: false, why: '' \}; headerChecked = false; titleVerdicts\.clear\(\);/);
+});
+test('header: plant based variants qualify', () => {
+  const { pageContext } = require('../contentClassifier.js');
+  for (const h of ['Easy plant based recipes', 'Plant-based cooking', 'PLANTBASED meals', '#plantbased', '100% plant powered kitchen', 'WFPB recipes']) assert.strictEqual(pageContext({ header: h, verdicts: [] }).vegan, true, h);
+  assert.strictEqual(pageContext({ header: 'Healthy recipes', verdicts: [] }).vegan, false);
 });

@@ -110,7 +110,7 @@
   const LABEL_W = {}; for (const [, w, l] of ANIMAL) LABEL_W[l] = Math.min(LABEL_W[l] || 9, w);
   // Page / channel context (0.4.12). header: channel name, tagline, description, or a page's h1/top header text.
   // verdicts: classify() verdicts of the visible titles on the page (computed without pageVegan).
-  const HEADER_VEGAN = /\b(?:vegan(?:ism|s)?|plant[- ]based|meatless|meat[- ]free|vegetarian[- ]vegan|vegan[- ]vegetarian|veganer?|vegane[nrs]?|pflanzlich(?:e[nrs]?)?|fleischlos(?:e[nrs]?)?|végétalien(?:ne)?s?|vegano|vegana)\b/i;
+  const HEADER_VEGAN = /\b(?:vegan(?:ism|s)?|plant[- ]?based|plant[- ]powered|wfpb|dairy[- ]free & egg[- ]free|meatless|meat[- ]free|vegetarian[- ]vegan|vegan[- ]vegetarian|veganer?|vegane[nrs]?|pflanzlich(?:e[nrs]?)?|fleischlos(?:e[nrs]?)?|végétalien(?:ne)?s?|vegano|vegana)\b/i;
   function pageContext(ctx) {
     const c = ctx || {}, v = (c.verdicts || []), nVegan = v.filter(x => x === 'vegan').length;
     if (c.header && HEADER_VEGAN.test(String(c.header))) return { vegan: true, why: 'header says vegan/plant-based' };
