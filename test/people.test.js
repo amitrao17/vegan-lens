@@ -1,4 +1,4 @@
-// v0.4.6: public-figure pills (people.json + people.js).
+// v0.4.7: public-figure pills (people.json + people.js).
 const test = require('node:test'), assert = require('node:assert'), fs = require('fs');
 const P = require('../people.js'), DATA = require('../people.json');
 

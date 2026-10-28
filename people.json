@@ -69,12 +69,36 @@
    "quote": "VegNews: Booker confirms he is vegan"
   },
   {
+   "name": "Novak Djokovic",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.menshealth.com/uk/nutrition/a30750556/novak-djokovic-plant-based-diet/",
+   "date": "2020-02-03",
+   "quote": "Plant-based: 'I'm very pleased to be plant based'"
+  },
+  {
+   "name": "Venus Williams",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://abcnews.com/Entertainment/venus-williams-daily-diet-future/story?id=39916789",
+   "date": "2016-06-17",
+   "quote": "Plant-based: 'I'm not perfect, but I live a plant-based lifestyle'"
+  },
+  {
+   "name": "Chris Paul",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.gq.com/story/real-life-diet-chris-paul",
+   "date": "2022-07-07",
+   "quote": "Plant-based (GQ interview): 'When I first went plant-based... it was for life'"
+  },
+  {
    "name": "James Cameron",
    "aliases": [],
    "status": "vegan",
-   "source": "https://vegnews.com/james-cameron-futurevore-term-vegans",
-   "date": "2022-11-28",
-   "quote": "VegNews: Cameron on being 100% plant-based/vegan"
+   "source": "https://deadline.com/2018/01/james-cameron-the-game-changers-avatar-sequels-sundance-interview-1202271289/",
+   "date": "2018-01-27",
+   "quote": "Deadline interview (first-hand): Cameron on eating plant-based for six years"
   },
   {
    "name": "Mayim Bialik",

@@ -37,6 +37,6 @@ test('manifest runs search script on all youtube pages (SPA)', () => {
   const m = require('../manifest.json');
   const cs = m.content_scripts.find(c => c.js.includes('search.js'));
   assert.ok(cs.matches.includes('*://*.youtube.com/*'));
-  assert.strictEqual(m.version, '0.4.6');
+  assert.strictEqual(m.version, '0.4.7');
   assert.ok(m.icons['32']);
 });
