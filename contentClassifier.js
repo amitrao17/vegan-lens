@@ -25,9 +25,18 @@
     ['animal rights|animal sanctuar(?:y|ies)|farm sanctuary|sanctuary|cruelty[- ]free|meatless|meat[- ]free|dairy[- ]free|veganuary|vegetarian', 2.5, 'animal-friendly'],
   ];
   const ETHICS = /\b(?:factory farm(?:s|ing)?|slaughter(?:house)?s?|animal (?:cruelty|welfare|abuse|suffering|agriculture)|cruelty|undercover investigation|why i (?:quit|stopped|gave up) (?:eating )?(?:meat|dairy|animal|being a (?:carnivore|meat))|(?:quit|quitting|giving up|gave up|stopped eating|ditch(?:ed|ing)?|cut(?:ting)? out|ban(?:s|ned|ning)?|less) (?:meat|dairy|beef|eating meat)|went vegan|go(?:ing)? vegan|meat (?:tax|reduction)|methane|emissions|rescued?|activists?|protest)\b/g;
+  // Plants that are commonly cut and cooked as "steaks" (0.4.12: kohlrabi, celery, king oyster, beet, zucchini, ...).
+  const PLANT_STEAK = 'cauliflower|cabbage|(?:king |king oyster |oyster )?mushrooms?|king oyster|tofu|celeriac|celery|kohlrabi|portobello|eggplant|aubergine|watermelon|seitan|jackfruit|tempeh|beet(?:root)?|zucchini|courgette|squash|carrot|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean';
+  // "Nobody wants meat anymore", "no one asks for meat", "tastes better than meat", "who needs meat": meat-rejection = vegan signal.
+  const MEAT_REJECT = /\b(?:(?:nobody|no ?one|no-one)(?: even)? (?:wants?|asks? for|misses|needs?|craves?) (?:any )?meat|(?:tastes? )?better than (?:any )?meat|who needs (?:any )?meat|(?:won't|wont|don't|dont|never) miss (?:the )?meat|forget (?:about )?meat)\b/g;
+  // A word that marks a title as plant food (used with opts.pageVegan).
+  const PLANT_WORD = new RegExp('\\b(?:' + PLANT_STEAK + '|vegan|plant|vegetables?|veg|lentils?|chickpeas?|beans?|tofu|garden)\\b');
+  // Unambiguous animal terms that still dim on a vegan page/channel (steak, burgers, "meat", cheese... are often plant recipes there).
+  const STRONG_PAGE = /^(?:beef|pork|bacon|poultry|brisket|seafood|fish|foie gras\/veal|hunting|fishing|animal entertainment|fur\/leather)$/;
   // Replace false friends before scoring.
   const FALSE_FRIENDS = [
-    /\b(?:cauliflower|cabbage|mushroom|tofu|celeriac|portobello|eggplant|watermelon|seitan|jackfruit|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean)[- ](?:steaks?|burgers?|bacon|ribs|wings|sausages?|meatballs?|chicken|cheese|milk|butter|ice cream|bbq|meat|fish|tuna|jerky|nuggets?)\b/g,
+    new RegExp('\\b(?:' + PLANT_STEAK + ')[- ](?:steaks?|burgers?|bacon|ribs|wings|sausages?|meatballs?|chicken|cheese|milk|butter|ice cream|bbq|meat|fish|tuna|jerky|nuggets?)\\b', 'g'),
+    /\bgarden[- ](?:fish ?sticks?|fish|burgers?|sausages?|nuggets?|steaks?|meatballs?)\b/g, // 'Garden Fish Sticks' style plant foods
     /\b(?:oat|soy|almond|coconut|cashew|rice|hemp|pea)[- ]?(?:milk|cheese|butter|yogurt|cream)\b/g,
     /\b(?:peanut|almond|cocoa|shea|apple|sun|cashew|body)[- ]butter\b/g,
     /\bkevin bacon\b|\bfrancis bacon\b|\bbacon number\b/g,
@@ -56,7 +65,7 @@
     // headline weighs double vs snippet/alt
     const segs = [[parts.headline, 2, 'title'], [parts.snippet, 1, 'snippet'], [parts.alt, 0.75, 'alt']].filter(s => s[0]);
     let neg = 0, pos = 0, ethics = 0; const reasons = [], about = {};
-    let veganHits = 0, headNeg = 0; const matches = [];
+    let veganHits = 0, headNeg = 0, rejects = 0, plantWord = false, headText = ''; const matches = [];
     for (const [rawText, segW, where] of segs) {
       let t = ' ' + String(rawText).toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u2010-\u2015]/g, '-') + ' ';
       // "Always vegan" list: strong positive; strip the phrase so e.g. "Daiya cheese" isn't scored as dairy.
@@ -65,8 +74,10 @@
         const words = Brands.norm(e.name).trim().split(' ').map(w => w.split('').join("['\u2019]?"));
         t = t.replace(new RegExp('\\b' + words.join('[^a-z0-9]+') + '\\b', 'g'), ' _ ');
       }
-      for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += /vegan|plant|cauliflower|tofu|mushroom|beyond|impossible|seitan|jackfruit|oat|soy|almond|coconut|meatless|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
+      for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += /vegan|plant|cauliflower|cabbage|celery|celeriac|kohlrabi|beet|zucchini|courgette|squash|carrot|eggplant|aubergine|portobello|tempeh|garden|tofu|mushroom|beyond|impossible|seitan|jackfruit|oat|soy|almond|coconut|meatless|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
+      t = t.replace(MEAT_REJECT, () => { veganHits += 1; rejects++; return ' _ '; });
       t = t.replace(NEGATED, () => { veganHits += 1; return ' _ '; });
+      if (where === 'title') { headText = t; if (PLANT_WORD.test(t)) plantWord = true; }
       for (const [re, w, l] of VEGAN_RX) { const n = count(re, t); if (n) { pos += w * segW * Math.min(n, 2); reasons.push('+' + l); } }
       const e = count(ETHICS, t); if (e) { ethics += e; reasons.push('+ethics/welfare framing'); }
       let segNeg = 0;
@@ -80,12 +91,16 @@
     if (veganHits) reasons.push('+plant-based alternative');
     // Ethics / activism framing neutralises the animal terms entirely and leans positive.
     if (ethics) { pos += 3 * ethics; neg *= 0.1; }
+    // Meat-rejection phrasing ("nobody wants meat anymore! These steaks..."): the remaining animal words describe the plant dish.
+    if (rejects) neg *= 0.3;
     const score = Math.round((pos - neg) * 100) / 100;
     let verdict = 'neutral';
     // requireHeadline (YouTube): hidden/secondary text alone (description, alt) can't make a card non-vegan.
     if (opts.requireHeadline && !headNeg) neg = 0;
     const headStrong = opts.sensitivity !== 'low' && matches.some(m => m.where === 'title' && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && !/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
-    if ((neg >= thr || headStrong) && neg > pos) verdict = 'nonvegan';
+    const strongHead = matches.some(m => m.where === 'title' && STRONG_PAGE.test(m.label));
+    if (opts.pageVegan && !(strongHead && !plantWord && !rejects)) { if (pos >= 3) verdict = 'vegan'; } // vegan page/channel: no dims unless clearly about meat
+    else if ((neg >= thr || (headStrong && !rejects)) && neg > pos) verdict = 'nonvegan';
     else if (pos >= 3 && pos > neg) verdict = 'vegan';
     const topic = Object.entries(about).sort((a, b) => b[1] - a[1])[0];
     return { verdict, score, reasons: [...new Set(reasons)], topic: topic ? topic[0] : null, about, matches };
@@ -93,7 +108,16 @@
 
   // lowest weight per animal label (for ad weak-word checks)
   const LABEL_W = {}; for (const [, w, l] of ANIMAL) LABEL_W[l] = Math.min(LABEL_W[l] || 9, w);
-  const api = { classify, THRESH, LABEL_W };
+  // Page / channel context (0.4.12). header: channel name, tagline, description, or a page's h1/top header text.
+  // verdicts: classify() verdicts of the visible titles on the page (computed without pageVegan).
+  const HEADER_VEGAN = /\b(?:vegan(?:ism|s)?|plant[- ]based|meatless|meat[- ]free|vegetarian[- ]vegan|vegan[- ]vegetarian|veganer?|vegane[nrs]?|pflanzlich(?:e[nrs]?)?|fleischlos(?:e[nrs]?)?|végétalien(?:ne)?s?|vegano|vegana)\b/i;
+  function pageContext(ctx) {
+    const c = ctx || {}, v = (c.verdicts || []), nVegan = v.filter(x => x === 'vegan').length;
+    if (c.header && HEADER_VEGAN.test(String(c.header))) return { vegan: true, why: 'header says vegan/plant-based' };
+    if (v.length && nVegan >= 3 && nVegan / v.length >= 0.2) return { vegan: true, why: nVegan + '/' + v.length + ' titles vegan' };
+    return { vegan: false, why: '' };
+  }
+  const api = { classify, pageContext, HEADER_VEGAN, THRESH, LABEL_W };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganContentClassifier = api;
 })(typeof self !== 'undefined' ? self : this);

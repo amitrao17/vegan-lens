@@ -139,6 +139,25 @@
     const p = extract(el); if (el.dataset.vlRich && p.headline.length < 8) p.headline = (el.innerText || el.getAttribute('aria-label') || '').trim().slice(0, 300); return p.headline.length < 8 ? null : unitKey(el, p); };
   const adKey = (el, p) => p.headline + '|' + [...U.videoIds(el)].join(',');
 
+  // ---------- page / channel vegan context (0.4.12) ----------
+  // A YouTube channel (/@handle, /channel/, /c/) or a page whose h1/top header says vegan/plant-based suppresses dims below it.
+  // YouTube channels also become a vegan context once >= 20% (min 3) of the visible titles classify vegan; recomputed as cards load.
+  const YT_CHANNEL = () => YT && /^\/(?:@[^/]+|channel\/[^/]+|c\/[^/]+)/.test(location.pathname);
+  let pageCtx = { vegan: false, why: '' }, headerChecked = false; const titleVerdicts = new Map();
+  function headerText() {
+    if (YT_CHANNEL()) return [...document.querySelectorAll('yt-page-header-renderer, #page-header, ytd-c4-tabbed-header-renderer, #channel-header, #channel-tagline, yt-description-preview-view-model')].map(n => n.innerText || n.textContent || '').join(' ').slice(0, 2000);
+    if (YT) return '';
+    const h = document.querySelector('main h1, article h1, header h1, h1'); return h ? (h.innerText || h.textContent || '').slice(0, 300) : '';
+  }
+  function updatePageCtx() {
+    if (pageCtx.vegan) return;
+    const c = C.pageContext({ header: headerText(), verdicts: YT_CHANNEL() ? [...titleVerdicts.values()] : [] });
+    if (!c.vegan) return;
+    pageCtx = c; dbg('page:vegan-context', null, { why: c.why });
+    // re-evaluate cards dimmed before the context was known
+    document.querySelectorAll('.vl-w-dim, .vl-w-dim-in, .vl-w-hide, .vl-w-hide-in').forEach(u => { if (u.dataset.vlAd) return; resetUnit(u); processUnit(u); });
+  }
+
   function processUnit(el) {
     if (seen.has(el)) return; seen.add(el);
     if (skippable(el)) return;
@@ -151,7 +170,10 @@
     if (el.dataset.vlRich && parts.headline.length < 8) parts.headline = (el.innerText || el.getAttribute('aria-label') || '').trim().slice(0, 300);
     if (parts.headline.length < 8) { seen.delete(el); return; } // not rendered yet: retry on next mutation
     el._vlKey = unitKey(el, parts);
-    const r = C.classify(parts, { ...S, requireHeadline: YT });
+    let r = C.classify(parts, { ...S, requireHeadline: YT });
+    if (YT_CHANNEL() && !titleVerdicts.has(parts.headline)) { titleVerdicts.set(parts.headline, r.verdict); updatePageCtx(); }
+    else if (!pageCtx.vegan && !headerChecked) { headerChecked = true; updatePageCtx(); } // non-channel pages: h1/top header once
+    if (pageCtx.vegan) r = C.classify(parts, { ...S, requireHeadline: YT, pageVegan: true });
     if (r.verdict !== 'nonvegan') dbg('content', el, { headline: parts.headline, verdict: r.verdict, reasons: r.reasons, matches: r.matches });
     apply(el, r, T.detectTopics(parts));
   }
@@ -282,7 +304,7 @@
     document.querySelectorAll('[data-vl-ad]').forEach(el => { delete el.dataset.vlAd; seen.delete(el); });
     document.querySelectorAll('.vl-w-chip, .vl-w-ctx, #vl-w-banner').forEach(n => n.remove());
     if (VP) VP.unmarkAll(document); peopleState = { counts: new Map() };
-    pageDone = false; zero(); send();
+    pageDone = false; pageCtx = { vegan: false, why: '' }; headerChecked = false; titleVerdicts.clear(); zero(); send();
   }
 
   let pending = new Set(), touched = new Set(), timer = null;
