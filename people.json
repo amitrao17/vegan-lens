@@ -1,0 +1,349 @@
+{
+ "version": 1,
+ "note": "Only people who publicly self-identified. Statuses: vegan, former (publicly stated they stopped being vegan), meat (publicly endorses eating meat). Unlisted people are never labelled.",
+ "people": [
+  {
+   "name": "Joaquin Phoenix",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.vanityfair.com/hollywood/2019/10/joaquin-phoenix-cover-story",
+   "date": "2019-10",
+   "quote": "Vanity Fair: Phoenix 'tells the story of how he became a vegan' at age 3"
+  },
+  {
+   "name": "Billie Eilish",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://vegnews.com/billie-eilish-vegan",
+   "date": "2021-05-05",
+   "quote": "British Vogue: 'I am vegan. I've been vegan for, damn, seven years.'"
+  },
+  {
+   "name": "Lewis Hamilton",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.bbc.com/sport/formula1/42472814",
+   "date": "2017-12-30",
+   "quote": "BBC Sport interview on going vegan"
+  },
+  {
+   "name": "Woody Harrelson",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.fantasticman.com/articles/woody-harrelson/",
+   "date": "2017",
+   "quote": "Fantastic Man: 'I've been vegan since 1990.'"
+  },
+  {
+   "name": "Moby",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.rollingstone.com/culture/culture-news/opinion-why-im-vegan-by-moby-109628/",
+   "date": "2014-03-18",
+   "quote": "Rolling Stone op-ed by Moby: 'Why I'm Vegan'"
+  },
+  {
+   "name": "Ariana Grande",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.mirror.co.uk/3am/celebrity-news/ariana-grande-i-love-animals-4754625",
+   "date": "2014-12-05",
+   "quote": "Mirror interview: 'I love animals more than I love most people'"
+  },
+  {
+   "name": "Alicia Silverstone",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.oprah.com/oprahshow/alicia-silverstone-on-becoming-vegan",
+   "date": "2010-01-21",
+   "quote": "Oprah.com: Silverstone on becoming vegan"
+  },
+  {
+   "name": "Cory Booker",
+   "aliases": [
+    "Senator Cory Booker"
+   ],
+   "status": "vegan",
+   "source": "https://vegnews.com/us-senator-cory-booker-goes-vegan",
+   "date": "2014-11-26",
+   "quote": "VegNews: Booker confirms he is vegan"
+  },
+  {
+   "name": "James Cameron",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://vegnews.com/james-cameron-futurevore-term-vegans",
+   "date": "2022-11-28",
+   "quote": "VegNews: Cameron on being 100% plant-based/vegan"
+  },
+  {
+   "name": "Mayim Bialik",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.avclub.com/mayim-bialik-veggies-out-1798268036",
+   "date": "2014-04-25",
+   "quote": "A.V. Club interview on becoming vegan"
+  },
+  {
+   "name": "Pamela Anderson",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.theguardian.com/fashion/2018/sep/19/pamela-anderson-on-never-wearing-leather-again-i-call-myself-a-naughty-vegan",
+   "date": "2018-09-19",
+   "quote": "Guardian: 'I call myself a naughty vegan'"
+  },
+  {
+   "name": "Rooney Mara",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.vogue.com/article/rooney-mara-hiraeth-vegan-faux-leather-collection",
+   "date": "2018-02-09",
+   "quote": "Vogue: 'Since she went vegan seven years ago…'"
+  },
+  {
+   "name": "Jessica Chastain",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.femalefirst.co.uk/celebrity/jessica-chastain-energy-since-going-vegan-1395162.html",
+   "date": "2024-02-25",
+   "quote": "Radio Times interview via Female First on going vegan"
+  },
+  {
+   "name": "Kat Von D",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.veganfoodandliving.com/vegan-lifestyle/interviews/exclusive-interview-kat-von-d/",
+   "date": "2018-06-20",
+   "quote": "Vegan Food & Living interview"
+  },
+  {
+   "name": "Scott Jurek",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.nomeatathlete.com/scott-jurek-interview/",
+   "date": "2010-12-09",
+   "quote": "No Meat Athlete interview with the vegan ultrarunner"
+  },
+  {
+   "name": "Sia",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.peta.org/news/sia-goes-vegan/",
+   "date": "2014-05-16",
+   "quote": "PETA: Sia announced she is 'fully vegan now'"
+  },
+  {
+   "name": "Benedict Cumberbatch",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.peta.org/news/benedict-cumberbatch-says-he-eats-vegan/",
+   "date": "2018-04-20",
+   "quote": "Avengers press interviews: says he is vegan"
+  },
+  {
+   "name": "Evanna Lynch",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.veganfoodandliving.com/vegan-lifestyle/interviews/exclusive-interview-with-evanna-lynch/",
+   "date": "2016-10-19",
+   "quote": "Vegan Food & Living interview"
+  },
+  {
+   "name": "Ricky Gervais",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://plantbasednews.org/news/celebrities/ricky-gervais-vegan/",
+   "date": "2022-01-21",
+   "quote": "Tonight Show: confirmed he is vegan"
+  },
+  {
+   "name": "Natalie Portman",
+   "aliases": [],
+   "status": "vegan",
+   "source": "https://www.vanityfair.com/style/2018/06/natalie-portman-vegan-interview",
+   "date": "2018-06-15",
+   "quote": "Vanity Fair interview on being vegan"
+  },
+  {
+   "name": "Lizzo",
+   "aliases": [],
+   "status": "former",
+   "source": "https://people.com/lizzo-quits-veganism-animal-proteins-help-mental-fog-8727027",
+   "date": "2024-10-11",
+   "quote": "People: Lizzo says she reintroduced animal proteins and is no longer vegan"
+  },
+  {
+   "name": "Miley Cyrus",
+   "aliases": [],
+   "status": "former",
+   "source": "https://www.womenshealthmag.com/food/a33915879/miley-cyrus-quit-vegan-diet/",
+   "date": "2020-09-03",
+   "quote": "Joe Rogan Experience #1531: said she stopped being vegan and eats fish"
+  },
+  {
+   "name": "Liam Hemsworth",
+   "aliases": [],
+   "status": "former",
+   "source": "https://www.menshealth.com/fitness/a32035323/liam-hemsworth-strength-interview/",
+   "date": "2020-04-13",
+   "quote": "Men's Health: rethought vegan diet after kidney stone"
+  },
+  {
+   "name": "Anne Hathaway",
+   "aliases": [],
+   "status": "former",
+   "source": "https://people.com/health/anne-hathaway-quit-vegan-diet-feeling-weak/",
+   "date": "2019-04-22",
+   "quote": "People: Hathaway on stopping being vegan"
+  },
+  {
+   "name": "Tim Shieff",
+   "aliases": [],
+   "status": "former",
+   "source": "https://www.veganfoodandliving.com/news/ex-vegan-tim-shieff-is-dropped-by-vegan-clothing-company-ethcs/",
+   "date": "2019-02-15",
+   "quote": "Announced he stopped being vegan (ate eggs and salmon)"
+  },
+  {
+   "name": "Mike Tyson",
+   "aliases": [],
+   "status": "former",
+   "source": "https://sport.sky.it/altri-sport/2020/11/23/tyson-jones-vegano",
+   "date": "2020-11-23",
+   "quote": "Sky Sport: Tyson 'Non sono più vegano' (I'm no longer vegan)"
+  },
+  {
+   "name": "Jordan Peterson",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://www.gq-magazine.co.uk/article/jordan-peterson-interview-2018",
+   "date": "2019-01-15",
+   "quote": "British GQ: confirms he is on an all-beef diet"
+  },
+  {
+   "name": "Mikhaila Peterson",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://www.theatlantic.com/health/archive/2018/08/the-peterson-family-meat-cleanse/567613/",
+   "date": "2018-08",
+   "quote": "The Atlantic: 'beef and salt and water'"
+  },
+  {
+   "name": "Joe Rogan",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://www.cnbc.com/2020/02/14/what-joe-rogan-learned-from-eating-a-carnivore-diet-for-30-days.html",
+   "date": "2020-02-14",
+   "quote": "CNBC: Rogan's carnivore month — 'I think you'll be amazed at how good you feel'"
+  },
+  {
+   "name": "Shawn Baker",
+   "aliases": [
+    "Dr. Shawn Baker"
+   ],
+   "status": "meat",
+   "source": "https://unfilteredonline.com/shawn-baker-md-how-the-carnivore-diet-plan-saved-my-life/",
+   "date": "2024-05-16",
+   "quote": "Unfiltered interview: carnivore diet author, ~97% red meat"
+  },
+  {
+   "name": "Paul Saladino",
+   "aliases": [
+    "Dr. Paul Saladino"
+   ],
+   "status": "meat",
+   "source": "https://chriskresser.com/all-about-the-carnivore-diet-with-dr-paul-saladino/",
+   "date": "2020-08-04",
+   "quote": "Revolution Health Radio: red meat 'indispensable for human health'"
+  },
+  {
+   "name": "Liver King",
+   "aliases": [
+    "Brian Johnson (Liver King)"
+   ],
+   "status": "meat",
+   "source": "https://www.gq-magazine.co.uk/lifestyle/article/the-liver-king-raw-meat-interview",
+   "date": "2022-05-11",
+   "quote": "British GQ interview promoting raw organ meat"
+  },
+  {
+   "name": "Anthony Bourdain",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://en.wikiquote.org/wiki/Anthony_Bourdain",
+   "date": "2000",
+   "quote": "Kitchen Confidential (2000), p.70: 'life without veal stock, pork fat, sausage… is a life not worth living'"
+  },
+  {
+   "name": "Ted Nugent",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://www.avclub.com/down-on-the-farm-with-ted-fucking-nugent-1798215907",
+   "date": "2009-03-07",
+   "quote": "A.V. Club interview on hunting and eating game"
+  },
+  {
+   "name": "Anthony Chaffee",
+   "aliases": [
+    "Dr. Anthony Chaffee"
+   ],
+   "status": "meat",
+   "source": "https://www.theguardian.com/food/2024/sep/12/carnivore-diet-meat-plants",
+   "date": "2024-09-12",
+   "quote": "Guardian feature on carnivore influencers"
+  },
+  {
+   "name": "Steven Rinella",
+   "aliases": [
+    "Steve Rinella"
+   ],
+   "status": "meat",
+   "source": "https://www.cbsnews.com/news/meateater-host-steve-rinella/",
+   "date": "2023-03-19",
+   "quote": "CBS News: MeatEater host on hunting and cooking game"
+  },
+  {
+   "name": "Amber O'Hearn",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://www.biohackerslab.com/ep37-amber-ohearn/",
+   "date": "2018-02-16",
+   "quote": "Biohacker's Lab podcast: all-meat diet since 2009"
+  },
+  {
+   "name": "Salt Bae",
+   "aliases": [
+    "Nusret Gökçe",
+    "Nusret Gokce"
+   ],
+   "status": "meat",
+   "source": "https://www.arabianbusiness.com/lifestyle/gourmet/salt-bae-meet-the-butcher-building-a-billion-dollar-business-one-golden-steak-at-a-time",
+   "date": "accessed 2026-10-28",
+   "quote": "Arabian Business interview: the butcher/steakhouse owner on his steaks"
+  },
+  {
+   "name": "Robb Wolf",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://chriskresser.com/setting-the-record-straight-on-meat-with-diana-rodgers-and-robb-wolf/",
+   "date": "2020-09-01",
+   "quote": "Sacred Cow co-author: 'the case for (better) meat'"
+  },
+  {
+   "name": "Diana Rodgers",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://chriskresser.com/setting-the-record-straight-on-meat-with-diana-rodgers-and-robb-wolf/",
+   "date": "2020-09-01",
+   "quote": "Sacred Cow co-author: 'the case for (better) meat'"
+  },
+  {
+   "name": "Brian Sanders",
+   "aliases": [],
+   "status": "meat",
+   "source": "https://benazadi.com/2023/08/09/brian-sanders-eat-more-red-meat-to-thrive-live-longer-kkp-635/",
+   "date": "2023-08-09",
+   "quote": "Interview: 'Eat More Red Meat to Thrive & Live Longer' (Food Lies filmmaker)"
+  }
+ ]
+}

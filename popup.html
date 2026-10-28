@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
+<body>
+<h1><img id="h-icon" src="icons/icon48.png" alt="">Vegan Lens<small id="version" class="version"></small></h1>
+<div class="total"><b id="total">0</b><span>Non-vegan items detected</span><small><span id="since">all time</span> · <a href="#" id="resetTotal">Reset</a></small></div>
+<div class="row page"><span id="page" title="">This page</span><label class="switch"><span>Disable on this page</span><input type="checkbox" id="pageOff"></label></div>
+<div id="stats" class="stats"><div><b id="c-vegan">0</b>vegan</div><div><b id="c-nonvegan">0</b>non-vegan dimmed</div><div><b id="c-unknown">0</b>unknown</div><div><b id="c-context">0</b>context cards</div><div><b id="c-ads">0</b>non-vegan ads</div></div>
+<h2>Amazon products</h2>
+<label class="row"><span>Enabled</span><input type="checkbox" id="enabled"></label>
+<label class="row"><span>Mode</span><select id="mode"><option value="dim">Dim non-vegan</option><option value="hide">Hide non-vegan</option><option value="badge">Badges only</option></select></label>
+<label class="row"><span>Strictness</span><select id="strictness"><option value="strict">Strict (honey, beeswax = not vegan)</option><option value="lenient">Lenient</option></select></label>
+<label class="row"><span>Show vegan swaps <small>(suggestion link on non-vegan items)</small></span><input type="checkbox" id="showSwaps"></label>
+<h2>Grocery sites <small>(Giant Food, Stop &amp; Shop, Martin's, Giant)</small></h2>
+<label class="row"><span>Grocery sites</span><select id="groceryMode"><option value="hide">Hide non-vegan</option><option value="dim">Dim non-vegan</option><option value="badge">Badges only</option></select></label>
+<h2>Web content</h2>
+<label class="row"><span>Enabled everywhere</span><input type="checkbox" id="webEnabled"></label>
+<label class="row"><span>Effect</span><select id="webMode"><option value="dim">Dim + blur</option><option value="hide">Collapse to chip</option><option value="label">Label only</option></select></label>
+<label class="row"><span>Sensitivity <small id="sensLabel"></small></span><input type="range" id="sensitivity" min="0" max="2" step="1"></label>
+<label class="row"><span>Search assist</span><select id="searchAssist"><option value="off">Off</option><option value="suggest">Suggest vegan search</option><option value="auto">Auto-rewrite search</option></select></label>
+<label class="row"><span>Check ads <small>(sponsored results, Amazon sponsored, YouTube ad cards; uses the effect above)</small></span><input type="checkbox" id="checkAds"></label>
+<label class="row"><span>Show context cards on animal-industry news</span><input type="checkbox" id="contextCards"></label>
+<label class="row"><span>Mark vegan public figures <small>(green V / grey "former vegan" after names; sourced, self-stated only)</small></span><input type="checkbox" id="markPeople"></label>
+<label class="row"><span>Mark public meat endorsers <small>(🥩 after names of people who publicly endorse eating meat; sourced)</small></span><input type="checkbox" id="markMeat"></label>
+<label class="row"><span>Debug: log decisions <small>(DevTools console, filter "Vegan Lens")</small></span><input type="checkbox" id="debug"></label>
+<label class="row"><span>Only run on allowlisted sites</span><input type="checkbox" id="webAllowOnly"></label>
+<div class="row"><span id="site">This site</span><button id="toggleSite">Disable on this site</button></div>
+<label class="col"><span>Blocklist (one domain per line)</span><textarea id="siteBlock" rows="3"></textarea></label>
+<label class="col"><span>Allowlist (one domain per line)</span><textarea id="siteAllow" rows="3"></textarea></label>
+<h2>Always vegan</h2>
+<p class="note wl-help">Brands/products always treated as vegan (Amazon + web). Your entries override everything; built-ins yield to an explicit "non-vegan" label.</p>
+<form id="wlForm" class="row wl-add"><input id="wlInput" type="text" placeholder="Add brand or keyword" maxlength="60"><button type="submit">Add</button></form>
+<ul id="wlUser" class="wl-list"></ul>
+<details class="wl-builtin"><summary>Built-in list (<span id="wlCount">0</span>)</summary><ul id="wlBuiltin" class="wl-list"></ul></details>
+<p class="note">Heuristic keyword matching — may be wrong. Changes apply live.</p>
+<script src="pageKey.js"></script><script src="veganBrands.js"></script><script src="popup.js"></script></body></html>

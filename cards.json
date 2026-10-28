@@ -1,0 +1,187 @@
+{
+  "_about": "Context card text. Every 'facts' entry was verified on 2026-10-28 against the exact 'source' URL. Topics without a verifiable fact use link-only cards. Edit freely; keep a source for every claim.",
+  "topics": {
+    "fur_farming": {
+      "title": "Fur farming",
+      "facts": [
+        {
+          "text": "Per the Fur Free Alliance, more than 30 countries have banned fur farming, banned certain species, or tightened rules that effectively curtailed it; the UK (2003) and Austria (2005) were the first to end it.",
+          "source": "https://www.furfreealliance.com/fur-bans/"
+        },
+        {
+          "text": "The Netherlands brought its mink farming shutdown forward from 2024 to 2021 after COVID-19 outbreaks on Dutch mink farms.",
+          "source": "https://www.furfreealliance.com/fur-bans/"
+        }
+      ],
+      "learn": {
+        "label": "Fur farming bans by country",
+        "url": "https://www.furfreealliance.com/fur-bans/"
+      },
+      "action": {
+        "label": "Fur Free Alliance",
+        "url": "https://www.furfreealliance.com/"
+      }
+    },
+    "zoonotic": {
+      "title": "Zoonotic disease",
+      "facts": [
+        {
+          "text": "WHO defines a zoonosis as any disease or infection naturally transmissible from vertebrate animals to humans; there are over 200 known types.",
+          "source": "https://www.who.int/news-room/fact-sheets/detail/zoonoses"
+        },
+        {
+          "text": "WHO notes some zoonoses, such as the coronavirus that causes COVID-19, have the potential to cause global pandemics.",
+          "source": "https://www.who.int/news-room/fact-sheets/detail/zoonoses"
+        }
+      ],
+      "learn": {
+        "label": "WHO: Zoonoses fact sheet",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/zoonoses"
+      },
+      "action": {
+        "label": "Explore plant-based eating (Good Food Institute)",
+        "url": "https://gfi.org/"
+      }
+    },
+    "avian_flu": {
+      "title": "Avian influenza (H5 bird flu)",
+      "facts": [
+        {
+          "text": "CDC: H5 bird flu is widespread in wild birds worldwide and is causing outbreaks in poultry and U.S. dairy cows, with sporadic human cases in U.S. dairy and poultry workers. CDC rates the current public health risk as low.",
+          "source": "https://www.cdc.gov/bird-flu/situation-summary/index.html"
+        }
+      ],
+      "learn": {
+        "label": "CDC: Bird flu current situation",
+        "url": "https://www.cdc.gov/bird-flu/situation-summary/index.html"
+      },
+      "action": {
+        "label": "Farm Sanctuary",
+        "url": "https://www.farmsanctuary.org/"
+      }
+    },
+    "dairy": {
+      "title": "Dairy industry",
+      "facts": [
+        {
+          "text": "CDC reports H5 bird flu outbreaks in U.S. dairy cows, with sporadic human cases among dairy and poultry workers.",
+          "source": "https://www.cdc.gov/bird-flu/situation-summary/index.html"
+        }
+      ],
+      "learn": {
+        "label": "CDC: Bird flu current situation",
+        "url": "https://www.cdc.gov/bird-flu/situation-summary/index.html"
+      },
+      "action": {
+        "label": "Plant-based alternatives (Good Food Institute)",
+        "url": "https://gfi.org/"
+      }
+    },
+    "factory_farming": {
+      "title": "Factory farming",
+      "facts": [],
+      "learn": {
+        "label": "Learn more about factory farming (Humane World for Animals)",
+        "url": "https://www.humaneworld.org/"
+      },
+      "action": {
+        "label": "Farm Sanctuary",
+        "url": "https://www.farmsanctuary.org/"
+      }
+    },
+    "fishing_oceans": {
+      "title": "Fishing and oceans",
+      "facts": [],
+      "learn": {
+        "label": "Learn more about fisheries and bycatch (FAO Fisheries)",
+        "url": "https://www.fao.org/fishery/en"
+      },
+      "action": {
+        "label": "Oceana",
+        "url": "https://oceana.org/"
+      }
+    },
+    "slaughter_workers": {
+      "title": "Slaughterhouses and worker safety",
+      "facts": [],
+      "learn": {
+        "label": "Learn more about meatpacking worker safety (OSHA)",
+        "url": "https://www.osha.gov/meatpacking"
+      },
+      "action": {
+        "label": "Explore plant-based eating (Good Food Institute)",
+        "url": "https://gfi.org/"
+      }
+    },
+    "antibiotics": {
+      "title": "Antimicrobial resistance",
+      "facts": [
+        {
+          "text": "WHO: bacterial antimicrobial resistance was estimated to be associated with more than 4.7 million deaths globally in 2021; misuse and overuse of antimicrobials drive resistance.",
+          "source": "https://www.who.int/news-room/fact-sheets/detail/antimicrobial-resistance"
+        }
+      ],
+      "learn": {
+        "label": "WHO: Antimicrobial resistance fact sheet",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/antimicrobial-resistance"
+      },
+      "action": {
+        "label": "Plant-based alternatives (Good Food Institute)",
+        "url": "https://gfi.org/"
+      }
+    },
+    "climate_deforestation": {
+      "title": "Climate and deforestation",
+      "facts": [
+        {
+          "text": "Our World in Data: expansion of pasture for cattle was responsible for 41% of tropical deforestation (about 2.1 million hectares a year).",
+          "source": "https://ourworldindata.org/drivers-of-deforestation"
+        }
+      ],
+      "learn": {
+        "label": "Our World in Data: Drivers of deforestation",
+        "url": "https://ourworldindata.org/drivers-of-deforestation"
+      },
+      "action": {
+        "label": "Plant-based alternatives (Good Food Institute)",
+        "url": "https://gfi.org/"
+      }
+    },
+    "animal_testing": {
+      "title": "Animal testing",
+      "facts": [],
+      "learn": {
+        "label": "Learn more about animal testing and alternatives",
+        "url": "https://crueltyfreeinternational.org/"
+      },
+      "action": {
+        "label": "Cruelty Free International",
+        "url": "https://crueltyfreeinternational.org/"
+      }
+    },
+    "live_export": {
+      "title": "Live animal export",
+      "facts": [],
+      "learn": {
+        "label": "Learn more about live export (Animals Australia)",
+        "url": "https://animalsaustralia.org/"
+      },
+      "action": {
+        "label": "Animals Australia",
+        "url": "https://animalsaustralia.org/"
+      }
+    },
+    "wildlife_markets": {
+      "title": "Wildlife markets and trade",
+      "facts": [],
+      "learn": {
+        "label": "Learn more about the wildlife trade (Humane World for Animals)",
+        "url": "https://www.humaneworld.org/"
+      },
+      "action": {
+        "label": "Humane World for Animals",
+        "url": "https://www.humaneworld.org/"
+      }
+    }
+  }
+}

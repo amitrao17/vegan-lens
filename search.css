@@ -1,0 +1,4 @@
+.vl-s-banner{all:initial;display:block;position:relative;z-index:2147483646;box-sizing:border-box;width:100%;padding:8px 40px 8px 16px;background:#e6f4ea;border-bottom:1px solid #b7dfc5;color:#1e6b33;font:14px/1.4 Arial,sans-serif}
+.vl-s-banner a{color:#1a5fb4!important;text-decoration:underline;font:inherit;font-weight:700}
+.vl-s-banner button{all:unset;position:absolute;right:14px;top:6px;cursor:pointer;font:18px Arial,sans-serif;color:#5f6368}
+.vl-s-banner.vl-s-yt{border:1px solid #b7dfc5;border-radius:10px;margin:8px 0 12px;font-size:15px}

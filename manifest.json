@@ -1,0 +1,110 @@
+{
+  "manifest_version": 3,
+  "name": "Vegan Lens",
+  "version": "0.4.6",
+  "description": "Highlights vegan products and content across the web, and dims non-vegan products, content and ads.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://world.openfoodfacts.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.amazon.com/*",
+        "*://*.giantfood.com/*",
+        "*://*.stopandshop.com/*",
+        "*://*.martinsfoods.com/*",
+        "*://*.giantfoodstores.com/*"
+      ],
+      "js": [
+        "pageKey.js",
+        "veganBrands.js",
+        "classifier.js",
+        "swaps.js",
+        "adUnits.js",
+        "sites.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "exclude_matches": [
+        "*://*.amazon.com/*",
+        "*://*.giantfood.com/*",
+        "*://*.stopandshop.com/*",
+        "*://*.martinsfoods.com/*",
+        "*://*.giantfoodstores.com/*"
+      ],
+      "js": [
+        "pageKey.js",
+        "veganBrands.js",
+        "contentClassifier.js",
+        "contextTopics.js",
+        "webUnits.js",
+        "adUnits.js",
+        "people.js",
+        "web.js"
+      ],
+      "css": [
+        "web.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.google.com/search*",
+        "*://*.bing.com/search*",
+        "*://duckduckgo.com/*",
+        "*://*.youtube.com/*",
+        "*://*.amazon.com/s*"
+      ],
+      "js": [
+        "pageKey.js",
+        "searchRewrite.js",
+        "search.js"
+      ],
+      "css": [
+        "search.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/icon32.png"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
