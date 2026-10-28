@@ -44,3 +44,11 @@ test('sensitivity thresholds', () => {
   assert.strictEqual(classify(h, { sensitivity: 'high' }).verdict, 'nonvegan');
 });
 test('returns shape', () => { const r = classify('Best steak recipe'); assert.ok(Array.isArray(r.reasons) && typeof r.score === 'number' && r.topic === 'steak'); });
+test('single meat in a recipe title dims; negated meat does not', () => {
+  for (const t of ['just potatoes and beef', 'creamy chipotle chicken', 'crispy chicken rissoles']) assert.strictEqual(classify(t).verdict, 'nonvegan', t);
+  for (const t of ['this mushroom stroganoff needs no beef', 'beef-free burger', 'chicken curry without the chicken', 'tacos with no pork']) assert.notStrictEqual(classify(t).verdict, 'nonvegan', t);
+});
+test('Ethan Chlebowski-style titles', () => {
+  for (const t of ['Is Expensive Honey a Scam?', 'Why I Stopped Using Ribeye for Cheesesteaks.', 'This 25 minute video will change how you think about Mayonnaise.', 'Is expensive Milk a scam?', 'Is Expensive Butter a scam?']) assert.strictEqual(classify(t, { requireHeadline: true }).verdict, 'nonvegan', t);
+  for (const t of ['Is oat milk a scam?', 'Vegan mayo taste test', 'Why I stopped eating meat', 'Coconut milk curry']) assert.notStrictEqual(classify(t, { requireHeadline: true }).verdict, 'nonvegan', t);
+});

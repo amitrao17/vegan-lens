@@ -1,4 +1,4 @@
-// v0.4.9: giantfood.com homepage "This Week's Ad" cards and promo tiles are classified; non-vegan ones hidden.
+// v0.4.11: giantfood.com homepage "This Week's Ad" cards and promo tiles are classified; non-vegan ones hidden.
 const test = require('node:test'), assert = require('node:assert'), fs = require('fs');
 const V = require('../sites.js'), C = require('../classifier.js'), { parse } = require('./helpers/minidom.js');
 const load = () => parse(fs.readFileSync(__dirname + '/fixtures/giant-home-promos.html', 'utf8'));

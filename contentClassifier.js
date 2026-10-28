@@ -3,7 +3,7 @@
   'use strict';
   // [regex source, weight, label]
   const ANIMAL = [
-    ['steaks?|ribeye|sirloin|t-bone|filet mignon|porterhouse', 3, 'steak'],
+    ['steaks?|cheesesteaks?|ribeye|sirloin|t-bone|filet mignon|porterhouse', 3, 'steak'],
     ['burgers?|cheeseburgers?|hamburgers?', 2, 'burgers'], ['brisket', 3, 'brisket'], ['bacon', 3, 'bacon'],
     ['(?:baby back |short |spare |bbq |pork )?ribs', 2, 'ribs'], ['(?:chicken |buffalo )?wings', 2, 'wings'],
     ['bbq|barbecue|barbeque|smokehouse|pulled pork', 2, 'BBQ meat'], ['pork|ham|prosciutto|salami|pepperoni|sausages?|hot dogs?|chorizo', 2, 'pork'],
@@ -12,7 +12,7 @@
     ['seafood|shellfish|lobsters?|oysters?|crabs?|shrimp|prawns?|scallops?|clams?|mussels?|sushi|sashimi|caviar', 3, 'seafood'],
     ['salmon|tuna|cod|trout|halibut|fish tacos?|fish and chips|fish', 2, 'fish'],
     ['cheese ?boards?|charcuterie|fondue', 3, 'cheese board'], ['cheeses?|brie|cheddar|mozzarella|parmesan|burrata', 2, 'cheese'],
-    ['dairy|milk|butter|cream|yogurt|ice cream|gelato|custard|eggs?|omelets?|omelettes?', 1.5, 'dairy/eggs'],
+    ['dairy|milk|butter|cream|yogurt|ice cream|gelato|custard|eggs?|omelets?|omelettes?|mayo|mayonnaise|aioli|ghee', 1.5, 'dairy/eggs'], ['honey|beeswax|royal jelly', 1.5, 'honey'],
     ['foie gras|veal|escargot|frog legs', 4, 'foie gras/veal'],
     ['hunting|hunter|deer season|duck season|trophy hunt', 3, 'hunting'], ['fishing|angler|fly fishing|catch of the day', 2.5, 'fishing'],
     ['rodeo|bullfight(?:ing)?|horse racing|circus animals?', 3, 'animal entertainment'],
@@ -24,7 +24,7 @@
     ['beyond (?:meat|burger|sausage)|impossible (?:burger|foods|meat|sausage)', 3, 'Beyond/Impossible'],
     ['animal rights|animal sanctuar(?:y|ies)|farm sanctuary|sanctuary|cruelty[- ]free|meatless|meat[- ]free|dairy[- ]free|veganuary|vegetarian', 2.5, 'animal-friendly'],
   ];
-  const ETHICS = /\b(?:factory farm(?:s|ing)?|slaughter(?:house)?s?|animal (?:cruelty|welfare|abuse|suffering|agriculture)|cruelty|undercover investigation|why i (?:quit|stopped|gave up)|(?:quit|quitting|giving up|gave up|stopped eating|ditch(?:ed|ing)?|cut(?:ting)? out|ban(?:s|ned|ning)?|less) (?:meat|dairy|beef|eating meat)|went vegan|go(?:ing)? vegan|meat (?:tax|reduction)|methane|emissions|rescued?|activists?|protest)\b/g;
+  const ETHICS = /\b(?:factory farm(?:s|ing)?|slaughter(?:house)?s?|animal (?:cruelty|welfare|abuse|suffering|agriculture)|cruelty|undercover investigation|why i (?:quit|stopped|gave up) (?:eating )?(?:meat|dairy|animal|being a (?:carnivore|meat))|(?:quit|quitting|giving up|gave up|stopped eating|ditch(?:ed|ing)?|cut(?:ting)? out|ban(?:s|ned|ning)?|less) (?:meat|dairy|beef|eating meat)|went vegan|go(?:ing)? vegan|meat (?:tax|reduction)|methane|emissions|rescued?|activists?|protest)\b/g;
   // Replace false friends before scoring.
   const FALSE_FRIENDS = [
     /\b(?:cauliflower|cabbage|mushroom|tofu|celeriac|portobello|eggplant|watermelon|seitan|jackfruit|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean)[- ](?:steaks?|burgers?|bacon|ribs|wings|sausages?|meatballs?|chicken|cheese|milk|butter|ice cream|bbq|meat|fish|tuna|jerky|nuggets?)\b/g,
@@ -42,6 +42,9 @@
   const ANIMAL_RX = ANIMAL.map(([s, w, l]) => [rx(s), w, l]);
   const VEGAN_RX = VEGAN.map(([s, w, l]) => [rx(s), w, l]);
 
+  // Negated mentions ("needs no beef", "without chicken", "beef-free", "instead of pork") are a vegan signal, not a meat one.
+  const ANIMAL_ALT = ANIMAL.map(a => a[0]).join('|');
+  const NEGATED = new RegExp('\\b(?:(?:needs?|need|with|has|have|had|contains?|zero|uses?|using)\\s+no|no|without|w/o|minus|skip(?:ping)?\\s+the|ditch(?:ing)?\\s+the|forget(?:\\s+about)?|instead\\s+of|replac(?:e|es|ing)(?:\\s+the)?|swap(?:ping)?\\s+(?:out\\s+)?(?:the\\s+)?|better\\s+than|not)\\s+(?:any\\s+|the\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b|\\b(?:' + ANIMAL_ALT + ')[- ](?:free|less)\\b', 'g');
   function count(re, t) { re.lastIndex = 0; const m = t.match(re); return m ? m.length : 0; }
 
   const Brands = (typeof module !== 'undefined' && module.exports) ? require('./veganBrands.js') : root.VeganBrands;
@@ -63,6 +66,7 @@
         t = t.replace(new RegExp('\\b' + words.join('[^a-z0-9]+') + '\\b', 'g'), ' _ ');
       }
       for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += /vegan|plant|cauliflower|tofu|mushroom|beyond|impossible|seitan|jackfruit|oat|soy|almond|coconut|meatless|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
+      t = t.replace(NEGATED, () => { veganHits += 1; return ' _ '; });
       for (const [re, w, l] of VEGAN_RX) { const n = count(re, t); if (n) { pos += w * segW * Math.min(n, 2); reasons.push('+' + l); } }
       const e = count(ETHICS, t); if (e) { ethics += e; reasons.push('+ethics/welfare framing'); }
       let segNeg = 0;
@@ -80,7 +84,8 @@
     let verdict = 'neutral';
     // requireHeadline (YouTube): hidden/secondary text alone (description, alt) can't make a card non-vegan.
     if (opts.requireHeadline && !headNeg) neg = 0;
-    if (neg >= thr && neg > pos) verdict = 'nonvegan';
+    const headStrong = opts.sensitivity !== 'low' && matches.some(m => m.where === 'title' && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && !/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
+    if ((neg >= thr || headStrong) && neg > pos) verdict = 'nonvegan';
     else if (pos >= 3 && pos > neg) verdict = 'vegan';
     const topic = Object.entries(about).sort((a, b) => b[1] - a[1])[0];
     return { verdict, score, reasons: [...new Set(reasons)], topic: topic ? topic[0] : null, about, matches };
