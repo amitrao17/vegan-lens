@@ -63,11 +63,11 @@ test('whole-name matching; no partial-word matches', () => {
 test('pill inserted right after the name, text order preserved, links to source', () => {
   const p = h('p', 'Hi Billie Eilish and Lizzo and Joe Rogan!'); const before = p.textContent;
   assert.strictEqual(mark(p), 3);
-  const ps = pills(p); assert.deepStrictEqual(ps.map(x => x.className), ['vl-p-pill vl-p-vegan', 'vl-p-pill vl-p-former', 'vl-p-pill vl-p-meat']);
+  const ps = pills(p); assert.deepStrictEqual(ps.map(x => x.className.replace(' vl-attr vl-attr-compact', '')), ['vl-p-pill vl-p-vegan', 'vl-p-pill vl-p-former', 'vl-p-pill vl-p-meat']);
   assert.strictEqual(p.childNodes[0].data, 'Hi Billie Eilish'); assert.strictEqual(p.childNodes[1], ps[0]);
   assert.strictEqual(p.textContent.replace(/V|former vegan|🥩/g, ''), before.replace(/V/g, ''));
   assert.strictEqual(ps[0].getAttribute('href'), DATA.people.find(x => x.name === 'Billie Eilish').source);
-  assert.match(ps[0].getAttribute('title'), /^Publicly vegan — source/); assert.strictEqual(ps[0].getAttribute('target'), '_blank');
+  assert.match(ps[0].getAttribute('title'), /^Vegan Lens: Publicly vegan — source.*Added by Vegan Lens extension$/); assert.strictEqual(ps[0].getAttribute('target'), '_blank');
 });
 test('no double marking on re-scan (MutationObserver re-runs)', () => {
   const p = h('div', h('p', 'Lewis Hamilton won.'), h('p', 'Lewis Hamilton')); const st = { counts: new Map() };

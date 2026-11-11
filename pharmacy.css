@@ -1,0 +1,7 @@
+.vl-ph-chip { display: block; margin: 8px 0; padding: 8px 12px; border-radius: 8px; background: #fff7e0; border: 1px solid #e0b84a; color: #5a4300; font: 600 14px/1.4 system-ui, sans-serif; }
+.vl-ph-dim { position: relative; }
+.vl-ph-dim > :not(.vl-ph-label) { opacity: .4; filter: grayscale(.6); }
+.vl-ph-label { display: inline-block; margin: 4px; padding: 2px 8px; border-radius: 6px; background: #fff7e0; border: 1px solid #e0b84a; color: #5a4300; font: 600 12px system-ui, sans-serif; cursor: pointer; }
+
+/* 0.4.32 attribution (brand.js) */
+.vl-attr{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;max-width:100%}.vl-mark-icon{width:16px!important;height:16px!important;min-width:16px;flex:none;display:inline-block;vertical-align:-3px;margin:0 2px 0 0!important;border-radius:3px;filter:none!important;box-shadow:none!important;opacity:1!important}.vl-mark-text{font-weight:600;white-space:nowrap;color:inherit}div.vl-attr,aside.vl-attr{display:flex}

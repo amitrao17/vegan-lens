@@ -3,9 +3,9 @@
 (() => {
   'use strict';
   if (window.top !== window) return;
-  const R = window.VeganSearchRewrite, P = window.VeganPage;
+  const R = window.VeganSearchRewrite, P = window.VeganPage, SW = window.VeganSwaps;
   const h = location.hostname;
-  const isYT = /(^|\.)youtube\.com$/.test(h);
+  const isYT = /(^|\.)youtube\.com$/.test(h), isBing = /(^|\.)bing\.com$/.test(h);
   function engineParam() {
     const p = location.pathname;
     if (/(^|\.)google\.[a-z.]+$/.test(h) && p === '/search') return 'q';
@@ -13,16 +13,18 @@
     if (/(^|\.)duckduckgo\.com$/.test(h)) return 'q';
     if (isYT && p === '/results') return 'search_query';
     if (/(^|\.)amazon\.com$/.test(h) && p === '/s') return 'k';
+    if (/(^|\.)pinterest\.[a-z]{2,3}(\.[a-z]{2})?$/.test(h) && /^\/search\//.test(p)) return 'q'; // 0.4.60
+    if (/(^|\.)ubereats\.com$/.test(h) && /\/search(?:\/|$)/.test(p)) return 'q'; // 0.4.66
     return null;
   }
-  let S = { searchAssist: 'suggest', siteBlock: [], pageBlock: [] };
+  let S = { searchAssist: 'suggest', audience: 'vegan', siteBlock: [], pageBlock: [] };
   let current = null; // {q, content}
   let lastHref = null;
 
   const link = (href, text, onclick) => { const a = document.createElement('a'); a.href = href; a.textContent = text; if (onclick) a.addEventListener('click', onclick); return a; };
   function buildBanner(content) {
     const b = document.createElement('div'); b.className = 'vl-s-banner'; b.id = 'vl-s-banner';
-    b.append('🌱 ', ...content);
+    b.append('🌱 ', ...content); (typeof VeganLensBrand !== 'undefined' ? VeganLensBrand.mark : typeof require === 'function' ? require('./brand.js').mark : (e => e))(b);
     const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.title = 'Dismiss';
     x.addEventListener('click', () => { b.remove(); if (current) current.dismissed = true; }); b.append(x);
     return b;
@@ -40,6 +42,7 @@
     if (document.getElementById('vl-s-banner')) return;
     const b = buildBanner(current.content());
     if (isYT) { const t = ytTarget(); if (!t) return; b.classList.add('vl-s-yt'); t.parentElement.insertBefore(b, t); }
+    else if (isBing && document.getElementById('b_content')) document.getElementById('b_content').prepend(b); // 0.4.45: inside Bing's results column (body-level nodes sit under its header)
     else if (document.body) document.body.prepend(b);
   }
 
@@ -60,7 +63,8 @@
       current = { q, content: () => ['Vegan Lens searched "' + q + '" for you. ', link(withQ(orig), 'Search original "' + orig + '" →', () => sessionStorage.setItem('vl-skip:' + orig.toLowerCase(), '1'))] };
       place(); return;
     }
-    const rw = R.rewriteQuery(q);
+    const sq = SW && SW.swapQuery ? SW.swapQuery(q) : null; // 0.4.44 swap map first
+    const rw = sq || R.rewriteQuery(q);
     if (!rw || sessionStorage.getItem('vl-skip:' + key)) return;
     if (S.searchAssist === 'auto' && !sessionStorage.getItem('vl-rewrote:' + key)) {
       sessionStorage.setItem('vl-rewrote:' + key, '1'); // loop guard
@@ -68,7 +72,7 @@
       location.replace(withQ(rw));
       return;
     }
-    current = { q, content: () => ['Try: ', link(withQ(rw), rw + ' →')] };
+    current = { q, content: () => [sq && SW.say ? SW.say(S.audience, 'searchChip') : 'Try: ', (() => { const a = link(withQ(rw), rw + ' →'); if (SW && SW.tagLink) SW.tagLink(a, S); return a; })()] };
     place();
   }
 

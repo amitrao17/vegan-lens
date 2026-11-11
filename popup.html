@@ -1,14 +1,40 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
 <body>
 <h1><img id="h-icon" src="icons/icon48.png" alt="">Vegan Lens<small id="version" class="version"></small></h1>
-<div class="total"><b id="total">0</b><span>Non-vegan items detected</span><small><span id="since">all time</span> · <a href="#" id="resetTotal">Reset</a></small></div>
-<div class="row page"><span id="page" title="">This page</span><label class="switch"><span>Disable on this page</span><input type="checkbox" id="pageOff"></label></div>
+<div class="tabs" role="tablist" aria-label="Vegan Lens sections">
+<button type="button" role="tab" id="tab-page" aria-controls="panel-page" aria-selected="true" tabindex="0">This page</button>
+<button type="button" role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="false" tabindex="-1">Settings</button>
+<button type="button" role="tab" id="tab-about" aria-controls="panel-about" aria-selected="false" tabindex="-1">About</button>
+</div>
+<div class="panels">
+<section role="tabpanel" id="panel-page" aria-labelledby="tab-page" tabindex="0">
+<p id="tagline" class="tagline" hidden></p>
 <div id="stats" class="stats"><div><b id="c-vegan">0</b>vegan</div><div><b id="c-nonvegan">0</b>non-vegan dimmed</div><div><b id="c-unknown">0</b>unknown</div><div><b id="c-context">0</b>context cards</div><div><b id="c-ads">0</b>non-vegan ads</div></div>
+<div class="row page"><span id="page" title="">This page</span><label class="switch"><span>Disable on this page</span><input type="checkbox" id="pageOff"></label></div>
+<div id="allClearLine" class="note all-clear" hidden style="color:#2e7d32;font-weight:600">✓ No non-vegan content found on this page</div>
+<h2>Share a find</h2>
+<p class="note share-help">Pick something Vegan Lens found on this page, edit the message, then choose where to send it. Nothing is sent until you press a destination; only the text you see is shared. Public posts (X, Facebook, Reddit, LinkedIn, Telegram) add #VeganLens.</p>
+<ul id="shareItems" class="share-list"></ul>
+<div id="shareCompose" class="share-compose" hidden>
+<label class="col"><span>Message <small>(editable)</small></span><textarea id="shareText" rows="5" aria-label="Share message, editable"></textarea></label>
+<div id="shareDests" class="share-dests" role="group" aria-label="Share destinations"></div>
+<div id="shareNote" class="note" role="status"></div>
+</div>
+<div class="row"><span>Something looks wrong? <small>(opens a pre-filled GitHub issue you can edit before submitting)</small></span><button id="report">Report a mistake</button></div>
+</section>
+<section role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" tabindex="0" hidden>
+<div class="audience"><label for="audience"><b>Who is this for?</b> <small id="audienceName"></small></label>
+<input type="range" id="audience" min="0" max="2" step="1" value="0" aria-valuetext="Vegan" list="audienceStops">
+<datalist id="audienceStops"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>
+<div class="audience-ends" aria-hidden="true"><span>Vegan</span><span>Flexitarian</span><span>Omni</span></div>
+<p class="note">Changes wording only (e.g. "Easy swap" instead of "Try"). Detection, verdicts and dim/hide stay the same.</p></div>
 <h2>Amazon products</h2>
 <label class="row"><span>Enabled</span><input type="checkbox" id="enabled"></label>
 <label class="row"><span>Mode</span><select id="mode"><option value="dim">Dim non-vegan</option><option value="hide">Hide non-vegan</option><option value="badge">Badges only</option></select></label>
 <label class="row"><span>Strictness</span><select id="strictness"><option value="strict">Strict (honey, beeswax = not vegan)</option><option value="lenient">Lenient</option></select></label>
+<label class="row"><span>Badge style <small>(Amazon + grocery product cards)</small></span><select id="badgeStyle"><option value="compact">Compact (icon + hover)</option><option value="full">Full text</option></select></label>
 <label class="row"><span>Show vegan swaps <small>(suggestion link on non-vegan items)</small></span><input type="checkbox" id="showSwaps"></label>
+<label class="row" id="affiliateRow" hidden><span>Support Vegan Lens with affiliate links <small id="affiliateNote">(adds a tag only to Amazon links Vegan Lens itself suggests; never changes site links, searches or verdicts)</small></span><input type="checkbox" id="affiliate"></label>
 <h2>Grocery sites <small>(Giant Food, Stop &amp; Shop, Martin's, Giant)</small></h2>
 <label class="row"><span>Grocery sites</span><select id="groceryMode"><option value="hide">Hide non-vegan</option><option value="dim">Dim non-vegan</option><option value="badge">Badges only</option></select></label>
 <label class="row"><span>Hide meat &amp; dairy store sections <small>(Meat, Seafood, Dairy &amp; Eggs in category bars, menus and filters)</small></span><input type="checkbox" id="hideMeatSections"></label>
@@ -18,10 +44,19 @@
 <label class="row"><span>Sensitivity <small id="sensLabel"></small></span><input type="range" id="sensitivity" min="0" max="2" step="1"></label>
 <label class="row"><span>Search assist</span><select id="searchAssist"><option value="off">Off</option><option value="suggest">Suggest vegan search</option><option value="auto">Auto-rewrite search</option></select></label>
 <label class="row"><span>Check ads <small>(sponsored results, Amazon sponsored, YouTube ad cards; uses the effect above)</small></span><input type="checkbox" id="checkAds"></label>
+<h3>Context &amp; people</h3>
 <label class="row"><span>Show context cards on animal-industry news</span><input type="checkbox" id="contextCards"></label>
 <label class="row"><span>Mark vegan public figures <small>(green V / grey "former vegan" after names; sourced, self-stated only)</small></span><input type="checkbox" id="markPeople"></label>
 <label class="row"><span>Mark public meat endorsers <small>(🥩 after names of people who publicly endorse eating meat; sourced)</small></span><input type="checkbox" id="markMeat"></label>
-<label class="row"><span>Debug: log decisions <small>(DevTools console, filter "Vegan Lens")</small></span><input type="checkbox" id="debug"></label>
+<h3>Extras</h3>
+<label class="row"><span>Facebook Marketplace <small>(materials badges; dims animals for sale, leaves adoptions alone)</small></span><input type="checkbox" id="marketplace"></label>
+<label class="row"><span>Show all-clear check <small>(green ✓ on the toolbar icon when a scanned page has no non-vegan or caution items)</small></span><input type="checkbox" id="allClear"></label>
+<label class="row"><span>Brand site banners <small>(slim strip on a brand's own website: all-vegan brands, or plant-based ideas on meat-company sites; × hides it for that site)</small></span><input type="checkbox" id="brandBanners"></label>
+<h3>Offers &amp; data</h3>
+<label class="row"><span>Show partner offers <small>(matched on your device. Vegan Lens may show partner offers matched on your device. Some links may earn a commission that supports development and partner nonprofits. No browsing data is collected.)</small></span><input type="checkbox" id="showOffers"></label>
+<label class="row"><span>Look up products in open databases <small>(product pages only: sends just the barcode, or brand + product name for beauty items, to Open Food Facts / Open Beauty Facts. Never URLs or history.)</small></span><input type="checkbox" id="dbLookups"></label>
+<label class="row"><span>Blur animal-product images <small>(when the caption or alt text names them, or the card is dimmed; click to show)</small></span><input type="checkbox" id="blurImages"></label>
+<h2>Sites</h2>
 <label class="row"><span>Only run on allowlisted sites</span><input type="checkbox" id="webAllowOnly"></label>
 <div class="row"><span id="site">This site</span><button id="toggleSite">Disable on this site</button></div>
 <label class="col"><span>Blocklist (one domain per line)</span><textarea id="siteBlock" rows="3"></textarea></label>
@@ -31,5 +66,26 @@
 <form id="wlForm" class="row wl-add"><input id="wlInput" type="text" placeholder="Add brand or keyword" maxlength="60"><button type="submit">Add</button></form>
 <ul id="wlUser" class="wl-list"></ul>
 <details class="wl-builtin"><summary>Built-in list (<span id="wlCount">0</span>)</summary><ul id="wlBuiltin" class="wl-list"></ul></details>
+</section>
+<section role="tabpanel" id="panel-about" aria-labelledby="tab-about" tabindex="0" hidden>
+<div class="total"><b id="total">0</b><span id="totalLabel">Non-vegan items detected</span><small><span id="since">all time</span> · <a href="#" id="resetTotal">Reset</a></small></div>
+<label class="row"><span>Share anonymous usage stats <small>(off by default; daily rounded counts (incl. how many images had no description or text) and which features are on. No URLs, titles, searches or IDs. <a href="#" id="previewStats">See exactly what's sent</a>)</small></span><input type="checkbox" id="shareStats"></label>
+<pre id="statsPreview" class="note" hidden></pre>
+<p id="adImgStats" class="note"></p>
+<details class="advanced"><summary>Advanced</summary>
+<label class="row"><span>Debug: log decisions <small>(DevTools console, filter "Vegan Lens")</small></span><input type="checkbox" id="debug"></label>
+<div class="row"><span>Edit rule list <small>(edit keywords, patterns and brand lists; stays on this device)</small></span><button type="button" id="editRules">Edit rules</button></div>
+<label class="row"><span>Show example offers <small>(developer: renders entries marked example:true in coupons.json)</small></span><input type="checkbox" id="showExampleOffers"></label>
+</details>
+<div class="row"><span>Version</span><span id="aboutVersion"></span></div>
+<div class="row"><span>Rule list</span><span id="rulesVersion"></span></div>
+<div class="row" id="affiliateDisclosure" hidden><small></small></div>
+<div class="row" id="supportRow" hidden><a id="supportLink" target="_blank" rel="noopener noreferrer">Support Vegan Lens</a></div>
+<label class="row"><span>Rule list update URL <small>(optional; empty = updates off. Only lists signed with the Vegan Lens key are accepted; nothing about your browsing is sent)</small></span><input type="url" id="rulesUrl" placeholder="https://…" spellcheck="false"></label>
+<div class="row"><span><small id="rulesStatus"></small></span><button type="button" id="rulesUpdate">Update now</button></div>
+<h2>Privacy &amp; help</h2>
+<p class="note">Vegan Lens classifies pages on your device. Nothing leaves your browser unless you turn on database lookups, anonymous stats, or press a share destination.</p>
 <p class="note">Heuristic keyword matching — may be wrong. Changes apply live.</p>
-<script src="pageKey.js"></script><script src="veganBrands.js"></script><script src="popup.js"></script></body></html>
+</section>
+</div>
+<script src="rules/rulesData.js"></script><script src="rules/rules.js"></script><script src="pageKey.js"></script><script src="veganBrands.js"></script><script src="offers.js"></script><script src="swaps.js"></script><script src="share.js"></script><script src="popup.js"></script></body></html></body></html>

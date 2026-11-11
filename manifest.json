@@ -1,14 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Vegan Lens",
-  "version": "0.4.13",
-  "description": "Highlights vegan products and content across the web, and dims non-vegan products, content and ads.",
+  "version": "0.4.70",
+  "description": "Spot vegan and non-vegan products and content as you shop, search and browse, with sourced context and easy vegan swaps.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "contextMenus",
+    "alarms"
   ],
   "host_permissions": [
-    "https://world.openfoodfacts.org/*"
+    "https://world.openfoodfacts.org/*",
+    "https://world.openbeautyfacts.org/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -38,12 +41,17 @@
         "*://*.giantfoodstores.com/*"
       ],
       "js": [
+        "brand.js",
         "pageKey.js",
+        "rules/rulesData.js",
+        "rules/rules.js",
+        "share.js",
         "veganBrands.js",
         "classifier.js",
         "swaps.js",
         "adUnits.js",
         "sites.js",
+        "offers.js",
         "content.js"
       ],
       "css": [
@@ -61,16 +69,24 @@
         "*://*.giantfood.com/*",
         "*://*.stopandshop.com/*",
         "*://*.martinsfoods.com/*",
-        "*://*.giantfoodstores.com/*"
+        "*://*.giantfoodstores.com/*",
+        "*://*.facebook.com/marketplace*"
       ],
       "js": [
+        "brand.js",
         "pageKey.js",
+        "rules/rulesData.js",
+        "rules/rules.js",
+        "share.js",
+        "swaps.js",
         "veganBrands.js",
         "contentClassifier.js",
         "contextTopics.js",
         "webUnits.js",
         "adUnits.js",
         "people.js",
+        "offers.js",
+        "brandSites.js",
         "web.js"
       ],
       "css": [
@@ -84,10 +100,37 @@
         "*://*.bing.com/search*",
         "*://duckduckgo.com/*",
         "*://*.youtube.com/*",
-        "*://*.amazon.com/s*"
+        "*://*.amazon.com/s*",
+        "*://*.pinterest.com/*",
+        "*://*.pinterest.ca/*",
+        "*://*.pinterest.co.uk/*",
+        "*://*.pinterest.com.au/*",
+        "*://*.pinterest.de/*",
+        "*://*.pinterest.fr/*",
+        "*://*.pinterest.es/*",
+        "*://*.pinterest.it/*",
+        "*://*.pinterest.at/*",
+        "*://*.pinterest.ch/*",
+        "*://*.pinterest.ie/*",
+        "*://*.pinterest.nz/*",
+        "*://*.pinterest.pt/*",
+        "*://*.pinterest.se/*",
+        "*://*.pinterest.dk/*",
+        "*://*.pinterest.jp/*",
+        "*://*.pinterest.com.mx/*",
+        "*://*.pinterest.cl/*",
+        "*://*.pinterest.ph/*",
+        "*://*.pinterest.co.kr/*",
+        "*://*.ubereats.com/search*",
+        "*://ubereats.com/search*",
+        "*://*.ubereats.com/*/search*"
       ],
       "js": [
+        "brand.js",
         "pageKey.js",
+        "rules/rulesData.js",
+        "rules/rules.js",
+        "swaps.js",
         "searchRewrite.js",
         "search.js"
       ],
@@ -95,11 +138,80 @@
         "search.css"
       ],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.facebook.com/marketplace*"
+      ],
+      "js": [
+        "brand.js",
+        "pageKey.js",
+        "rules/rulesData.js",
+        "rules/rules.js",
+        "share.js",
+        "swaps.js",
+        "veganBrands.js",
+        "classifier.js",
+        "adUnits.js",
+        "marketplace.js"
+      ],
+      "css": [
+        "marketplace.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.facebook.com/*"
+      ],
+      "exclude_matches": [
+        "*://*.facebook.com/marketplace*"
+      ],
+      "js": [
+        "brand.js",
+        "pageKey.js",
+        "rules/rulesData.js",
+        "rules/rules.js",
+        "share.js",
+        "swaps.js",
+        "veganBrands.js",
+        "classifier.js",
+        "adUnits.js",
+        "marketplace.js"
+      ],
+      "css": [
+        "marketplace.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.sephora.com/product/*",
+        "*://*.ulta.com/p/*",
+        "*://*.walmart.com/ip/*",
+        "*://*.target.com/p/*"
+      ],
+      "js": [
+        "brand.js",
+        "pageKey.js",
+        "rules/rulesData.js",
+        "rules/rules.js",
+        "share.js",
+        "swaps.js",
+        "veganBrands.js",
+        "classifier.js",
+        "productdb.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
+        "icons/icon16.png",
         "icons/icon32.png"
       ],
       "matches": [

@@ -13,10 +13,10 @@ function matchOne(e, sel) {
     if (p[0] === '#') { if (e.attrs.id !== p.slice(1)) return false; }
     else if (p[0] === '.') { if (!(e.attrs.class || '').split(' ').includes(p.slice(1))) return false; }
     else if (p[0] === ':') { if (p.startsWith(':not')) { if (matchOne(e, p.slice(5, -1))) return false; } }
-    else { const a = p.slice(1, -1).match(/^([\w-]+)(?:([\^*]?=)["']?([^"'\]]*?)["']?(\s+i)?)?$/); const v = e.attrs[a[1]];
+    else { const a = p.slice(1, -1).match(/^([\w-]+)(?:([\^*$]?=)["']?([^"'\]]*?)["']?(\s+i)?)?$/); const v = e.attrs[a[1]];
       if (v == null) return false; if (!a[2]) continue;
       const [x, y] = a[4] ? [String(v).toLowerCase(), a[3].toLowerCase()] : [String(v), a[3]];
-      if (a[2] === '=' ? x !== y : a[2] === '^=' ? !x.startsWith(y) : !x.includes(y)) return false; }
+      if (a[2] === '=' ? x !== y : a[2] === '^=' ? !x.startsWith(y) : a[2] === '$=' ? !x.endsWith(y) : !x.includes(y)) return false; }
   }
   return true;
 }
@@ -131,7 +131,7 @@ test('swap URL uses the grocery site search', () => {
   assert.strictEqual(V.swapUrl('https://stopandshop.com', 'Just Egg'), 'https://stopandshop.com/product-search/Just%20Egg');
   assert.strictEqual(V.swapUrl('https://evil.example', 'x'), 'https://giantfood.com/product-search/x');
   const r = C.classify('Giant Whole Milk'); const sw = W.pickSwap(r.matched, 'Giant Whole Milk');
-  assert.strictEqual(V.swapUrl('https://giantfood.com', sw.query), 'https://giantfood.com/product-search/Oatly%20oat%20milk');
+  assert.strictEqual(V.swapUrl('https://giantfood.com', sw.query), 'https://giantfood.com/product-search/oat%20milk');
 });
 test('hidden notice text', () => { assert.strictEqual(V.hiddenNotice(12), 'Vegan Lens hid 12 non-vegan items'); assert.strictEqual(V.hiddenNotice(1), 'Vegan Lens hid 1 non-vegan item'); });
 test('manifest: grocery hosts run content.js (with sites.js), excluded from generic web script', () => {
@@ -139,7 +139,7 @@ test('manifest: grocery hosts run content.js (with sites.js), excluded from gene
   for (const g of V.GROCERY_MATCHES) { assert.ok(shop.matches.includes(g), g); assert.ok(web.exclude_matches.includes(g), g); }
   assert.ok(shop.js.indexOf('sites.js') >= 0 && shop.js.indexOf('sites.js') < shop.js.indexOf('content.js'));
   assert.ok(shop.matches.includes('*://*.amazon.com/*'));
-  assert.deepStrictEqual(m.host_permissions, ['https://world.openfoodfacts.org/*']);
+  assert.deepStrictEqual(m.host_permissions, ['https://world.openfoodfacts.org/*', 'https://world.openbeautyfacts.org/*']);
 });
 test('popup: grocery mode setting defaults to hide', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'popup.html'), 'utf8'), js = fs.readFileSync(path.join(__dirname, '..', 'popup.js'), 'utf8');

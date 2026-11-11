@@ -4,13 +4,22 @@
   const P = window.VeganPage, A = window.VeganAdUnits, W = window.VeganSwaps, V = window.VeganSites;
   const SITE = (V && V.siteOf(location.hostname)) || 'amazon'; // 'amazon' | 'grocery'
   const GROCERY = SITE === 'grocery';
-  const DEFAULTS = { checkAds: true, enabled: true, mode: 'dim', strictness: 'strict', showSwaps: true, groceryMode: 'hide', pageBlock: [], siteBlock: [], whitelist: [], whitelistDisabled: [], hideMeatSections: true };
+  const DEFAULTS = { checkAds: true, enabled: true, mode: 'dim', strictness: 'strict', showSwaps: true, audience: 'vegan', groceryMode: 'hide', pageBlock: [], siteBlock: [], whitelist: [], whitelistDisabled: [], hideMeatSections: true, restaurantSites: true, badgeStyle: 'compact' };
+  const O = window.VeganOffers; if (O) Object.assign(DEFAULTS, O.OFFER_DEFAULTS);
+  let COUPONS = [], offerShown = false; // 0.4.29 max 1 partner offer per page
+  function addOffer(el, matched, title) {
+    if (!O || !S.showOffers || offerShown || !COUPONS.length) return;
+    const o = O.pick(COUPONS, { categories: O.categoriesFor(matched, title), showExample: S.showExampleOffers, shownOnPage: offerShown, enabled: S.showOffers });
+    if (!o) return; offerShown = true;
+    el.append(O.element(o, document, k => { try { chrome.runtime.sendMessage({ type: 'stat', k: k === 'shown' ? 'offerShown' : 'offerClicked' }); } catch (e) {} }));
+  }
   let S = { ...DEFAULTS };
   const M = () => V ? V.effectiveMode(SITE, S) : S.mode; // Amazon: S.mode; grocery sites: S.groceryMode (default hide)
   let revealed = false; // user clicked "show" on the grocery hidden-items notice
-  const RESULT_SEL = "div[data-component-type='s-search-result'], div[data-asin].s-result-item, li[data-asin].s-result-item, div[data-asin][data-component-type='sp-sponsored-result']";
+  const RESULT_SEL = (V && V.AMAZON_TILE_SEL) || "div[data-component-type='s-search-result'], div[data-asin].s-result-item, li[data-asin].s-result-item, div[data-asin][data-component-type='sp-sponsored-result'], [id^='p13n-asin-index-'], .p13n-grid-content";
 
   const titleOf = el => V.amazonTitleOf(el);
+  const asinOf = el => (V && V.amazonIdOf ? V.amazonIdOf(el) : el.getAttribute('data-asin'));
 
   function clear(el) {
     el.classList.remove('vl-item', 'vl-vegan', 'vl-dim', 'vl-hidden');
@@ -19,22 +28,43 @@
     delete el.dataset.vlDone; delete el.dataset.vlVerdict; delete el.dataset.vlAd;
   }
 
-  function badge(el, cls, text, title) {
+  const mark = (window.VeganLensBrand ? window.VeganLensBrand.mark : (e => e));
+  // 0.4.67: Compact (default) = icon-only pill; Full = classic text badge. Hover/focus/tap shows the full label.
+  // 0.4.68: badge text is the verdict only — Amazon already labels those cards; no sponsored copy or ad dot.
+  function badge(el, cls, text, title, extra) {
+    const compact = (S.badgeStyle || 'compact') !== 'full';
     const b = document.createElement('span');
-    b.className = 'vl-badge ' + cls; b.textContent = text; if (title) b.title = title;
-    el.appendChild(b); return b;
+    b.className = 'vl-badge ' + cls + (compact ? ' vl-badge-compact' : '');
+    b.setAttribute('role', 'status');
+    if (title) b.title = title;
+    if (compact) {
+      b.tabIndex = 0;
+      const tip = document.createElement('span'); tip.className = 'vl-badge-tip';
+      const lab = document.createElement('span'); lab.className = 'vl-badge-text'; lab.textContent = text; tip.appendChild(lab);
+      if (extra) tip.appendChild(extra);
+      b.appendChild(tip);
+      b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); b.classList.toggle('vl-badge-open'); }, true);
+      b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); b.classList.toggle('vl-badge-open'); } }, true);
+      b.addEventListener('blur', () => { setTimeout(() => { if (!b.contains(document.activeElement)) b.classList.remove('vl-badge-open'); }, 0); });
+    } else {
+      b.textContent = text;
+      if (extra) b.appendChild(extra);
+    }
+    mark(b, { compact: true }); el.appendChild(b); return b;
   }
 
   // "Vegan swap: <link>" — extension-labelled, generic Amazon search on this origin. Never moves page elements.
+  const nvHead = r => '✕ ' + (W && W.verdictHead ? W.verdictHead(S.audience, r.matched) : 'Likely NOT vegan'); // 0.4.44 audience wording
   function swapEl(matched, text, cls) {
     if (!S.showSwaps || !W) return null;
+    const banner = /vl-swap-banner/.test(cls || '');
+    if (banner && document.querySelector('.vl-swap-pill')) return null; // 0.4.44: at most one swap pill per product page
     const sw = W.pickSwap(matched, text); if (!sw) return null;
-    const w = document.createElement('span'); w.className = 'vl-swap ' + (cls || ''); w.title = 'Suggestion added by the Vegan Lens extension (generic ' + (GROCERY ? 'store' : 'Amazon') + ' search)';
-    const ic = document.createElement('img'); ic.className = 'vl-swap-icon'; ic.alt = 'Vegan Lens'; try { ic.src = chrome.runtime.getURL('icons/icon32.png'); } catch (e) {}
-    const a = document.createElement('a'); a.href = GROCERY ? V.swapUrl(location.origin, sw.query) : W.swapUrl(location.origin, sw.query); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = sw.label;
-    a.addEventListener('click', e => e.stopPropagation(), true);
-    w.append(ic, 'Vegan swap: ', a); return w;
+    const w = document.createElement('span'); w.className = 'vl-swap ' + (banner ? 'vl-swap-pill ' : '') + (cls || ''); w.title = 'Suggestion added by the Vegan Lens extension (search on this store)';
+    const a = document.createElement('a'); a.href = W.storeSearchUrl ? W.storeSearchUrl(location.href, sw.query) : W.swapUrl(location.origin, sw.query); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = sw.label; if (W.tagLink) W.tagLink(a, S);
+    w.append(W.say ? W.say(S.audience, 'swap') : 'Try: ', a); return mark(w, banner ? {} : { compact: true });
   }
+
 
   // Sponsored cards in product-page ad widgets (#sp_detail, sponsored carousels, sims-fbt sponsored).
   const AD_WIDGETS = A.SITES.amazon.block.join(', ');
@@ -42,7 +72,7 @@
     return ((n && (n.textContent || n.getAttribute('title'))) || (el.querySelector('img[alt]') || { alt: '' }).alt || '').trim(); };
   // Per-site adapters: how to find result tiles, their title/id, and sponsored status.
   const ADAPTERS = {
-    amazon: { tiles: () => document.querySelectorAll(RESULT_SEL), title: titleOf, id: el => el.getAttribute('data-asin'), isAd: el => A.isAmazonSponsored(el), detail: () => processDetail() },
+    amazon: { tiles: () => document.querySelectorAll(RESULT_SEL), title: titleOf, id: asinOf, isAd: el => A.isAmazonSponsored(el), detail: () => processDetail() },
     grocery: { tiles: () => [...V.findTiles(document), ...V.findPromoCards(document)], title: el => el.dataset.vlPromo ? V.promoTitleOf(el) : V.titleOfTile(el), id: el => el.dataset.vlPromo ? 'promo:' + V.promoTitleOf(el) : V.idOfTile(el), isAd: el => V.isSponsored(el), detail: () => processGroceryDetail() },
   };
   const AD = ADAPTERS[SITE];
@@ -58,27 +88,37 @@
     el.dataset.vlDone = '1';
     if (GROCERY) el.dataset.vlId = id;
     if (ad) el.dataset.vlAd = '1';
-    const r = C.classify(title, S);
+    const r = C.classify(title, { ...S, allowProbably: true });
     if (el.dataset.vlPromo && r.verdict !== 'non-vegan') return; // homepage promo/weekly-ad cards: only hide non-vegan, no badges
     el.dataset.vlVerdict = r.verdict;
+    el.dataset.vlWhy = r.verdict === 'vegan' ? 'Vegan' : r.verdict === 'non-vegan' ? 'contains ' + r.matched.join(', ') : ''; // share (0.4.42)
     el.classList.add('vl-item');
     if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
     const mode = M();
     if (r.verdict === 'vegan') {
       if (mode !== 'badge') el.classList.add('vl-vegan');
-      badge(el, 'vl-badge-vegan', ad ? 'Sponsored · 🌱 vegan' : '🌱 Vegan', 'Signals: ' + r.positives.join(', '));
+      badge(el, 'vl-badge-vegan', '🌱 Vegan', 'Signals: ' + r.positives.join(', '));
     } else if (r.verdict === 'non-vegan') {
-      const why = (ad ? 'Sponsored · non-vegan: ' : 'Not vegan: contains ') + r.matched.join(', ');
-      const sw = GROCERY ? null : swapEl(r.matched, title, mode === 'badge' ? 'vl-swap-left' : ''); // grocery: swaps on product pages only
-      if (mode === 'badge') { badge(el, 'vl-badge-nonvegan', '✕ ' + why); if (sw) el.appendChild(sw); return; }
+      const why = 'Not vegan: contains ' + r.matched.join(', '); // 0.4.68: verdict-only copy (Amazon already labels ads)
+      const sw = GROCERY || (C.isDrink && C.isDrink(title)) ? null : swapEl(r.matched, title, mode === 'badge' ? 'vl-swap-left' : ''); // 0.4.33: no food swaps on drinks // grocery: swaps on product pages only
+      { const sa = sw && (sw.matches && sw.matches('a[href]') ? sw : sw.querySelector && sw.querySelector('a[href]')); if (sa) el.dataset.vlSwap = sa.href; }
+      if (mode === 'badge') {
+        if (sw && (S.badgeStyle || 'compact') !== 'full') { badge(el, 'vl-badge-nonvegan', '✕ ' + why, null, sw); addOffer(sw, r.matched, title); }
+        else { badge(el, 'vl-badge-nonvegan', '✕ ' + why); if (sw) { el.appendChild(sw); addOffer(sw, r.matched, title); } }
+        return;
+      }
       if (GROCERY && mode === 'hide') { el.dataset.vlHid = '1'; if (!revealed) el.classList.add('vl-hidden'); }
       else el.classList.add(mode === 'hide' ? 'vl-hidden' : 'vl-dim');
       const lab = document.createElement('span');
       lab.className = 'vl-label'; lab.textContent = why; lab.title = 'Click to show anyway';
-      lab.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); el.classList.remove('vl-dim'); lab.remove(); }, true);
-      el.appendChild(lab); if (sw) el.appendChild(sw);
+      mark(lab, { compact: true });
+      lab.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); try { chrome.runtime.sendMessage({ type: 'stat', k: 'reveal' }); } catch (x) {} el.classList.remove('vl-dim'); lab.remove(); }, true);
+      el.appendChild(lab); if (sw) { el.appendChild(sw); addOffer(sw, r.matched, title); }
+    } else if (r.verdict === 'probably') {
+      badge(el, 'vl-badge-probably', '🌱 Probably vegan', 'Listed materials are non-animal (e.g. aluminum, silicone) — not certified' + (r.probable ? ': ' + r.probable.join(', ') : ''));
     } else {
-      badge(el, 'vl-badge-unknown', ad ? 'Sponsored · ?' : '?', 'Vegan Lens: unknown from title');
+      if (r.caution && r.caution.length) badge(el, 'vl-badge-caution', '⚠ Caution: may contain animal products', r.caution.join(' '));
+      else badge(el, 'vl-badge-unknown', '?', 'Vegan Lens: unknown from title');
     }
   }
 
@@ -100,8 +140,8 @@
     const add = (l, v) => { l = clean(l).replace(/\s*:\s*$/, ''); v = clean(v); if (!l || !v || l.length > 60) return; const k = l.toLowerCase() + '|' + v.toLowerCase(); if (seen.has(k)) return; seen.add(k); pairs.push({ label: l, value: v }); };
     const T = n => n ? (n.innerText || n.textContent || '') : '';
     try {
-      document.querySelectorAll('#productOverview_feature_div tr, #prodDetails tr, #productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr, [id^=productDetails] tr').forEach(tr => {
-        const l = tr.querySelector('td.a-span3, th, td:first-child'); const v = tr.querySelector('td.a-span9, td:last-child');
+      document.querySelectorAll('#productOverview_feature_div tr, #prodDetails tr, #productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr, [id^=productDetails] tr, table.prodDetTable tr, table.a-keyvalue tr, #voyager-ns-desktop-side-sheet-container tr, #voyagerNorthstarATFData_feature_div tr').forEach(tr => {
+        const l = tr.querySelector('th.prodDetSectionEntry, td.a-span3, th, td:first-child'); const v = tr.querySelector('td.prodDetAttrValue, td.a-span9, td:last-child');
         if (l && v && l !== v) add(T(l), T(v));
       });
       document.querySelectorAll('#productFactsDesktopExpander .a-row, #productFactsDesktop_feature_div .a-row, [id*=product-facts] .a-row, [class*=product-facts] .a-row, .product-facts-detail').forEach(r => {
@@ -124,39 +164,67 @@
     const m = t.match(/\b(?:UPC|EAN|GTIN)[^\d]{0,20}(\d{8,14})/i);
     return m ? m[1] : null;
   }
+  const BEAUTY_CAT = /\b(?:beauty|personal care|makeup|make-up|cosmetics?|skin ?care|hair ?care|fragrance|nail)\b/i;
+  const DRINK_CAT = /\b(?:beer|wine|spirits|alcohol(?:ic)?|liquor)\b/i;
+  const DRINK = /\b(?:beers?|ales?|lagers?|ipa|stouts?|porters?|pilsners?|ciders?|wines?|cabernet|merlot|pinot|chardonnay|sauvignon|riesling|ros[eé]|prosecco|champagne|vodka|gin|rum|whiske?y|bourbon|tequila|mezcal|brandy|cognac|liqueurs?|sake)\b/i;
+  function findBrand(attrs) {
+    const row = (attrs || []).find(p => /^brand(?: name)?$/i.test(String(p.label || '').trim())); if (row) return String(row.value).trim().slice(0, 80);
+    const by = document.getElementById('bylineInfo'); const t = by ? (by.textContent || '').trim() : '';
+    const m = t.match(/^Visit the (.+?) Store$/i) || t.match(/^Brand:\s*(.+)$/i); return m ? m[1].trim().slice(0, 80) : '';
+  }
+  // 0.4.70: deeper PDP copy, including hidden/lazy-loaded voyager prodDet tables and A+ / description.
+  const DETAIL_COPY = '#feature-bullets, #productDescription, #aplus, #aplus_feature_div, [id^=aplus], #productFactsDesktop_feature_div, #productFactsDesktopExpander, #productOverview_feature_div, #detailBullets_feature_div, #detailBulletsWrapper_feature_div, #prodDetails, [id^=productDetails], #poExpander, #voyager-ns-desktop-side-sheet-container, #voyagerNorthstarATFData_feature_div, table.prodDetTable, #twister, #twister_feature_div, #variation_color_name';
   async function processDetail() {
     const titleEl = document.getElementById('productTitle');
-    if (!titleEl || document.getElementById('vl-banner')) return;
+    if (!titleEl) return;
     const title = titleEl.textContent.trim();
     const ingredients = findIngredients();
     const badges = txt('#acBadge_feature_div, .badge-wrapper, #climatePledgeFriendlyBadge, #brandSnapshot_feature_div');
     const bullets = txt('#feature-bullets');
     const attributes = findAttributes();
-    const r = C.classify([title, ingredients, bullets, badges].join('\n'), { ...S, attributes });
+    const detail = txt(DETAIL_COPY);
+    const attrsText = attributes.map(p => p.label + ': ' + p.value).join('\n');
+    const crumbs = txt('#wayfinding-breadcrumbs_feature_div');
+    const isDrinkPage = (DRINK_CAT.test(crumbs) && DRINK.test(title)) || !!(C.isDrink && C.isDrink(title));
+    const payload = [title, ingredients, bullets, badges, detail, attrsText].join('\n');
+    const sig = payload.length + ':' + (title.length + ingredients.length + bullets.length + badges.length + detail.length + attrsText.length + attributes.length);
+    let b = document.getElementById('vl-banner');
+    if (b && b.dataset.vlSig === String(sig)) return;
+    const first = !b;
+    const r = C.classify(payload, { ...S, attributes, allowProbably: true, beauty: BEAUTY_CAT.test(crumbs), drink: isDrinkPage });
     const rowsNote = r.attributeRows && r.attributeRows.length ? ' · from product details: ' + r.attributeRows.join(', ') : '';
-    const b = document.createElement('div');
-    b.id = 'vl-banner';
+    if (first) { b = document.createElement('div'); b.id = 'vl-banner'; }
+    b.dataset.vlSig = String(sig);
     const render = (verdict, extra) => {
-      b.className = 'vl-banner vl-banner-' + verdict; b.dataset.verdict = verdict; report();
-      const head = verdict === 'vegan' ? (r.materialsOnly ? '🌱 Likely vegan (materials; dyes/glues not verified)' : '🌱 Likely vegan') : verdict === 'non-vegan' ? '✕ Likely NOT vegan' : '? Vegan status unknown';
-      const det = verdict === 'non-vegan' ? 'Matched: ' + r.matched.join(', ') : r.positives.length ? 'Signals: ' + r.positives.join(', ') : 'No clear signals found';
+      b.className = 'vl-banner vl-banner-' + verdict; b.dataset.verdict = verdict; b.title = (verdict === 'probably' ? 'Listed materials are non-animal (e.g. aluminum, silicone) \u2014 not certified' : '') + (rowsNote ? (verdict === 'probably' ? '\n' : '') + rowsNote.replace(/^ · /, '') : ''); report();
+      const head = verdict === 'probably' ? '🌱 Probably vegan' : verdict === 'vegan' ? (r.materialsOnly ? '🌱 Likely vegan (materials; dyes/glues not verified)' : '🌱 Likely vegan') : verdict === 'non-vegan' ? nvHead(r) : (r.caution && r.caution.length ? '⚠ Caution: sometimes contains animal products' : '? Vegan status unknown');
+      const det = verdict === 'probably' ? 'Non-animal materials: ' + (r.probable || []).join(', ') + ' (not certified)' : verdict === 'unknown' && r.caution && r.caution.length ? r.caution.join(' ') : verdict === 'non-vegan' ? 'Matched: ' + r.matched.join(', ') : r.positives.length ? 'Signals: ' + r.positives.join(', ') : 'No clear signals found';
       b.innerHTML = '';
-      const h = document.createElement('b'); h.textContent = 'Vegan Lens: ' + head;
-      const d = document.createElement('span'); d.textContent = det + rowsNote + (ingredients || rowsNote ? '' : ' (no ingredients section found)');
-      const ic = document.createElement('img'); ic.className = 'vl-banner-icon'; ic.alt = 'Vegan Lens'; ic.title = 'Added by the Vegan Lens extension'; try { ic.src = chrome.runtime.getURL('icons/icon32.png'); } catch (e) {}
-      b.append(ic, h, d);
+      const h = document.createElement('b'); h.textContent = verdict === 'probably' ? head : 'Vegan Lens: ' + head;
+      const d = document.createElement('span'); d.textContent = det + (ingredients || rowsNote ? '' : ' (no ingredients section found)'); // 0.4.33: product-details note lives in the tooltip
+      if (verdict === 'probably') b.title = det + '\n' + b.title; // full text if the one-line banner truncates
+      b.append(h, d); b.removeAttribute('data-vl-attr'); mark(b);
       if (extra) { const s = document.createElement('small'); s.textContent = extra; b.append(s); }
-      if (verdict === 'non-vegan') { const sw = swapEl(r.matched, title, 'vl-swap-banner'); if (sw) b.append(sw); }
+      if (verdict === 'non-vegan') { const sw = isDrinkPage ? null : swapEl(r.matched, title, 'vl-swap-banner'); if (sw) b.append(sw); addOffer(b, r.matched, title); }
     };
     render(r.verdict);
-    const anchor = document.getElementById('titleSection') || titleEl.parentElement;
-    anchor.parentElement.insertBefore(b, anchor);
-    const upc = findUPC();
-    if (upc && chrome.runtime?.id) {
-      chrome.runtime.sendMessage({ type: 'off-lookup', code: upc }, off => {
-        if (chrome.runtime.lastError || !off) return;
-        const v = (r.verdict === 'unknown' && off !== 'unknown') ? off : r.verdict;
-        render(v, `Open Food Facts (UPC ${upc}): ${off}`);
+    if (first) {
+      const anchor = document.getElementById('titleSection') || titleEl.parentElement;
+      if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(b, anchor);
+    }
+    if (!first) return;
+    // Barnivore has no public API: offer a user-clicked search link on drinks (nothing is sent automatically).
+    if (DRINK_CAT.test(crumbs) && DRINK.test(title)) { const a = document.createElement('a'); a.className = 'vl-barnivore'; a.href = 'https://www.barnivore.com/search?keyword=' + encodeURIComponent(title.replace(/https?:\/\/\S+/g, '').slice(0, 80)); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = 'Check on Barnivore'; a.title = 'Opens Barnivore (vegan drinks directory) with this product name'; b.append(mark(a, { compact: true })); }
+    // 0.4.31 open databases: barcode only (or brand + name for beauty products). Database > ingredients > title guess.
+    const upc = findUPC(), beauty = BEAUTY_CAT.test(crumbs), brand = findBrand(attributes);
+    if ((upc || (beauty && brand)) && chrome.runtime?.id) {
+      chrome.runtime.sendMessage({ type: 'db-lookup', db: beauty ? 'obf' : 'off', code: upc, brand: beauty ? brand : '', name: beauty ? title : '' }, d => {
+        if (chrome.runtime.lastError || !d) return;
+        const res = C.resolveDb({ verdict: r.verdict === 'probably' ? 'unknown' : r.verdict, matched: r.matched, certifiedVegan: r.positives.includes('certified vegan') }, d);
+        if (res.source === 'page') return;
+        if (res.caution) r.caution = res.caution;
+        render(res.verdict, (res.source === 'conflict' ? 'Sources: ' + d.source + ' and this page' : 'Source: ' + d.source + (d.certified ? ' (vegan label)' : '') + (d.crueltyFree ? ' · cruelty-free' : '')) + (upc ? ` (UPC ${upc})` : ''));
+        b.title = 'Vegan Lens — ' + (res.source === 'conflict' ? 'conflict: ' + d.source + ' vs. on-page ingredients' : 'from ' + d.source);
       });
     }
   }
@@ -186,14 +254,13 @@
     if (g.allergens.animal.length && r.verdict !== 'non-vegan' && !(r.whitelisted.length && r.verdict === 'vegan')) { r.verdict = 'non-vegan'; r.matched = g.allergens.animal.map(V.allergenLabel); }
     const b = document.createElement('div'); b.id = 'vl-banner';
     b.className = 'vl-banner vl-banner-' + r.verdict; b.dataset.verdict = r.verdict;
-    const head = r.verdict === 'vegan' ? '🌱 Likely vegan' : r.verdict === 'non-vegan' ? '✕ Likely NOT vegan' : '? Vegan status unknown';
+    const head = r.verdict === 'vegan' ? '🌱 Likely vegan' : r.verdict === 'non-vegan' ? nvHead(r) : '? Vegan status unknown';
     const det = r.verdict === 'non-vegan' ? 'Matched: ' + r.matched.join(', ') + (g.allergens.contains.length ? ' · allergen statement: Contains ' + g.allergens.contains.join(', ') : '')
       : r.positives.length ? 'Signals: ' + r.positives.join(', ') : 'No clear signals found';
     const h = document.createElement('b'); h.textContent = 'Vegan Lens: ' + head;
     const d = document.createElement('span'); d.textContent = det + (ingredients ? '' : ' (no ingredients section found)');
-    const ic = document.createElement('img'); ic.className = 'vl-banner-icon'; ic.alt = 'Vegan Lens'; ic.title = 'Added by the Vegan Lens extension'; try { ic.src = chrome.runtime.getURL('icons/icon32.png'); } catch (e) {}
-    b.append(ic, h, d);
-    if (r.verdict === 'non-vegan') { const sw = swapEl(r.matched, name, 'vl-swap-banner'); if (sw) b.append(sw); }
+    b.append(h, d); mark(b);
+    if (r.verdict === 'non-vegan') { const sw = swapEl(r.matched, name, 'vl-swap-banner'); if (sw) b.append(sw); addOffer(b, r.matched, name); }
     titleEl.parentElement.insertBefore(b, titleEl);
   }
   // One extension-labelled notice above the results: "Vegan Lens hid N non-vegan items · show".
@@ -203,12 +270,11 @@
     if (!GROCERY || !hid.length || M() !== 'hide') { if (n) n.remove(); return; }
     if (!n) {
       n = document.createElement('div'); n.id = 'vl-hidden-notice'; n.className = 'vl-notice'; n.title = 'Added by the Vegan Lens extension';
-      const ic = document.createElement('img'); ic.className = 'vl-swap-icon'; ic.alt = 'Vegan Lens'; try { ic.src = chrome.runtime.getURL('icons/icon32.png'); } catch (e) {}
       const sp = document.createElement('span'); sp.className = 'vl-notice-text';
       const a = document.createElement('a'); a.href = '#'; a.className = 'vl-notice-toggle';
       a.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); revealed = !revealed;
         document.querySelectorAll('[data-vl-hid]').forEach(el => el.classList.toggle('vl-hidden', !revealed)); updateNotice(); }, true);
-      n.append(ic, sp, ' · ', a);
+      n.append(sp, ' · ', a); mark(n);
     }
     const grid = hid[0].parentElement;
     if (grid && grid.parentElement && n.nextSibling !== grid) grid.parentElement.insertBefore(n, grid);
@@ -219,19 +285,22 @@
   }
 
   let lastUrl = location.href, sendT;
+  try { chrome.runtime.onMessage.addListener(m => { if (m && m.type === 'recount') { P.reportPage(); report(); } }); } catch (e) {} // 0.4.59
   function report() {
     clearTimeout(sendT);
     sendT = setTimeout(() => {
-      const c = { vegan: 0, nonvegan: 0, unknown: 0, context: 0, ads: 0 };
-      document.querySelectorAll('[data-vl-verdict]').forEach(e => { const v = e.dataset.vlVerdict; c[v === 'non-vegan' ? 'nonvegan' : v]++; if (v === 'non-vegan' && e.dataset.vlAd) c.ads++; });
+      const c = { vegan: 0, probably: 0, nonvegan: 0, unknown: 0, context: 0, ads: 0, scanned: 0, caution: 0 };
+      document.querySelectorAll('[data-vl-verdict]').forEach(e => { const v = e.dataset.vlVerdict; c[v === 'non-vegan' ? 'nonvegan' : v]++; if (v === 'non-vegan' && e.dataset.vlAd) c.ads++; c.scanned++; });
+      c.caution = document.querySelectorAll('.vl-badge-caution').length;
       const b = document.getElementById('vl-banner');
-      if (b) { const v = b.dataset.verdict; c[v === 'non-vegan' ? 'nonvegan' : v]++; }
+      if (b) { const v = b.dataset.verdict; c[v === 'non-vegan' ? 'nonvegan' : v]++; c.scanned += 3; if (/Caution/.test(b.textContent || '')) c.caution++; } // a product page verdict is a full evaluation
       try { chrome.runtime.sendMessage({ type: 'counts', source: SITE, counts: c }); } catch (e) {}
     }, 300);
   }
   function run() {
     if (location.href !== lastUrl) { lastUrl = location.href; try { chrome.runtime.sendMessage({ type: 'reset' }); } catch (e) {} P.reportPage(); if (GROCERY || P.isDisabled(S, location.href)) undo(); }
     if (P.isDisabled(S, location.href)) return; // disabled on this page: do nothing
+    if (V.isRestaurantHost(location.hostname) && S.restaurantSites === false) { undo(); return; } // restaurant-supply toggle off
     if (V && V.hideSections) V.hideSections(document, V.sectionRulesFor(location.hostname, S)); // store sections (own toggle)
     if (!S.enabled) { report(); return; }
     AD.tiles().forEach(el => processResult(el));
@@ -255,7 +324,8 @@
   new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(run, 250); })
     .observe(document.documentElement, { childList: true, subtree: true });
 
-  chrome.storage.sync.get(DEFAULTS, s => { S = s; delete S.sortTop; // legacy setting removed in 0.4.0: ignored
+  chrome.storage.sync.get(DEFAULTS, async s => { S = s; delete S.sortTop; // legacy setting removed in 0.4.0: ignored
+    if (S.showOffers) try { COUPONS = (await chrome.runtime.sendMessage({ type: 'coupons' })) || []; } catch (e) {}
     P.reportPage(); run(); });
   window.addEventListener('popstate', () => setTimeout(run, 50));
   if (GROCERY) setInterval(() => { if (location.href !== lastUrl) run(); }, 1000); // SPA pushState navigation without DOM churn

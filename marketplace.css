@@ -1,0 +1,11 @@
+.vl-mp-pill{position:absolute;top:6px;right:6px;z-index:5;font:600 11px/1.3 system-ui,sans-serif;padding:2px 7px;border-radius:10px;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
+#vl-mp-banner{position:relative;min-height:26px;margin:6px 0}
+#vl-mp-banner .vl-mp-pill{position:static;display:inline-block;font-size:13px;white-space:normal}
+.vl-mp-vegan{background:#2e9d4a;color:#fff}
+.vl-mp-non,.vl-mp-why{background:#fce8e6;color:#8c1d18;cursor:pointer}
+.vl-mp-caution{background:#fef7e0;color:#7a4f01;border:1px solid #f2c94c}
+.vl-mp-adopt{background:#e8f0fe;color:#174ea6}
+.vl-mp-dim > :not(.vl-mp-pill){opacity:.25;filter:grayscale(1)}
+
+/* 0.4.32 attribution (brand.js) */
+.vl-attr{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;max-width:100%}.vl-mark-icon{width:16px!important;height:16px!important;min-width:16px;flex:none;display:inline-block;vertical-align:-3px;margin:0 2px 0 0!important;border-radius:3px;filter:none!important;box-shadow:none!important;opacity:1!important}.vl-mark-text{font-weight:600;white-space:nowrap;color:inherit}div.vl-attr,aside.vl-attr{display:flex}

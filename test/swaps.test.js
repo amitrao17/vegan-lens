@@ -43,11 +43,11 @@ test('no swap when nothing matched or unmapped term', () => {
   assert.strictEqual(W.pickSwap(['carmine'], 'lipstick'), null);
 });
 test('attribute-row labels like "leather (Upper)" map', () => assert.strictEqual(W.pickSwap(['leather (Upper)'], 'Sneaker').id, 'leather-shoes'));
-test('brand queries only use brands from veganBrands.js; no ASINs/prices', () => {
-  const brands = B.BUILTIN.map(e => e.name.toLowerCase());
+test('0.4.44: category-level queries only (no brands); no ASINs/prices', () => {
+  const brands = B.BUILTIN.map(e => e.name.toLowerCase()).filter(b => b.length > 3);
   for (const r of W.RULES) {
     assert.ok(!/\b[B0][0-9A-Z]{9}\b|\$|\/dp\//.test(r.query + r.label), r.id);
-    if (!/^vegan |vegan|down alternative|plant/i.test(r.query)) assert.ok(brands.some(b => r.query.toLowerCase().includes(b)), 'unknown brand in ' + r.query);
+    assert.ok(!brands.some(b => new RegExp('\\b' + b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(r.query.toLowerCase())), 'brand in ' + r.query);
   }
 });
 test('URL uses the current Amazon origin', () => {
@@ -77,5 +77,5 @@ test('cleanup: undo removes swaps; links open in new tab with noopener', () => {
   assert.ok(/:scope > \.vl-swap/.test(c), 'clear() removes card swaps');
   assert.ok(/getElementById\('vl-banner'\)\?\.remove\(\)/.test(c), 'banner (with swap) removed');
   assert.ok(/target = '_blank'/.test(c) && /rel = 'noopener/.test(c));
-  assert.ok(/icons\/icon32\.png/.test(c) && /Vegan swap: /.test(c));
+  assert.ok(/mark\(w, banner \? \{\} : \{ compact: true \}\)/.test(c) && /say\(S\.audience, 'swap'\)/.test(c) && /icons\/icon16\.png/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'brand.js'), 'utf8')));
 });

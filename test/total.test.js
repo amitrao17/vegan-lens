@@ -19,6 +19,6 @@ test('popup shows version and total UI', () => {
   assert.match(j, /getManifest\(\)\.version/); assert.match(j, /confirm\(/);
 });
 test('versions agree at 0.4.11 and background loads total.js', () => {
-  assert.strictEqual(require('../manifest.json').version, '0.4.13'); assert.strictEqual(require('../package.json').version, '0.4.13');
+  assert.strictEqual(require('../manifest.json').version, '0.4.70'); assert.strictEqual(require('../package.json').version, '0.4.70');
   assert.match(fs.readFileSync(__dirname + '/../background.js', 'utf8'), /importScripts\([^)]*'total\.js'/);
 });

@@ -33,3 +33,31 @@
 .vl-p-vegan{background:#2e9d4a!important;color:#fff!important}
 .vl-p-former{background:#dadce0!important;color:#3c4043!important;font-weight:400!important}
 .vl-p-meat{background:#fce8e6!important;color:#8c1d18!important;font-weight:400!important}
+
+.vl-page-vegan .vl-w-vegan::before{display:none!important}
+.vl-img-blur,.vl-blur-images .vl-w-dim img:not(.vl-img-shown),.vl-blur-images .vl-w-dim-in img:not(.vl-img-shown){filter:blur(14px) grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) brightness(1.15)!important;/* 0.4.61: same green tint wherever blur is applied */cursor:pointer!important}
+.vl-page-vegan .vl-img-blur{filter:none!important}
+.vl-w-swap{color:#1e6b33!important;font-weight:600;text-decoration:underline}
+.vl-w-caution{display:inline-block;margin:2px 0 4px;padding:2px 8px;border-radius:10px;background:#fff4d6;color:#7a4d00;border:1px solid #e0b44a;font:600 11px/1.4 system-ui,sans-serif;position:relative;z-index:2}
+
+.vl-offer{font-size:11px}.vl-offer-link{color:#6a1b9a!important;text-decoration:underline}.vl-offer-code{font-family:monospace;background:#f3e5f5;padding:0 3px;border-radius:3px}.vl-offer-copy{font-size:10px;padding:0 4px;cursor:pointer}
+
+/* 0.4.32 attribution (brand.js) */
+.vl-attr{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;max-width:100%}.vl-mark-icon{width:16px!important;height:16px!important;min-width:16px;flex:none;display:inline-block;vertical-align:-3px;margin:0 2px 0 0!important;border-radius:3px;filter:none!important;box-shadow:none!important;opacity:1!important}.vl-mark-text{font-weight:600;white-space:nowrap;color:inherit}div.vl-attr,aside.vl-attr{display:flex}
+/* 0.4.45: host pages (Walmart carousels) set inherited text-hiding styles on wrappers; the chip text must always show */
+.vl-w-chip,.vl-w-chip *{visibility:visible!important;text-indent:0!important;letter-spacing:normal!important;-webkit-text-fill-color:currentColor!important;text-transform:none!important;clip:auto!important;clip-path:none!important;white-space:nowrap!important;overflow:visible!important}
+.vl-w-chip{min-width:max-content!important;height:auto!important;position:relative}
+.vl-blur-label{display:inline-flex!important;align-items:center;gap:3px;position:relative;z-index:2;margin:2px 0!important;padding:2px 7px!important;border-radius:10px;background:#1f3d2b!important;color:#fff!important;font:600 11px/1.4 system-ui,sans-serif!important;cursor:pointer;white-space:nowrap;visibility:visible!important;filter:none!important}
+/* 0.4.50 brand-site banner: slim fixed strip at the top, dismissible per site */
+#vl-brand-banner{position:fixed!important;flex-wrap:nowrap!important;white-space:nowrap!important;width:max-content!important;top:0!important;left:0!important;right:0!important;margin-left:auto!important;margin-right:auto!important;z-index:2147483646!important;display:flex!important;align-items:center;gap:10px;max-width:calc(100% - 16px)!important;padding:4px 8px 4px 12px!important;margin-top:0!important;border-radius:0 0 10px 10px!important;font:13px/1.4 Arial,sans-serif!important;box-shadow:0 2px 6px rgba(0,0,0,.18)!important;box-sizing:border-box!important}
+#vl-brand-banner.vl-brand-vegan{background:#e6f4ea!important;color:#0d652d!important;border:1px solid #81c995!important;border-top:0!important}
+#vl-brand-banner.vl-brand-soft{background:#f8f9fa!important;color:#3c4043!important;border:1px solid #dadce0!important;border-top:0!important}
+#vl-brand-banner .vl-brand-link{color:inherit!important;text-decoration:underline!important;font-weight:600}
+#vl-brand-banner .vl-brand-close{all:unset;cursor:pointer;font-size:16px;line-height:1;padding:0 4px;opacity:.7}
+#vl-brand-banner .vl-brand-close:hover{opacity:1}
+
+.vl-w-chip.vl-w-chip-discuss{opacity:.85;background:#eef7f0!important;color:#2d6a3e!important;font-weight:400!important}
+
+/* 0.4.66 Uber Eats dish/restaurant chips */
+.vl-w-chip.vl-w-chip-vegan{background:#e6f4ea!important;color:#0d652d!important;border-color:#81c995!important;font-weight:600!important}
+.vl-w-chip.vl-w-chip-likely{background:#f0f7f2!important;color:#2d6a3e!important;border-color:#b7dfc3!important;font-weight:500!important;opacity:.95}

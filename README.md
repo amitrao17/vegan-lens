@@ -8,6 +8,24 @@ Highlights vegan products and content across the web, and dims non-vegan product
 3. Click **Load unpacked** and select the folder that contains `manifest.json`.
 4. Pin the leaf icon, then open an Amazon search such as "gummy candy".
 
+## Key features
+- Product badges: marks products Vegan, Likely vegan, Not vegan or unknown on Amazon, Giant Food, Stop & Shop, Martin's and other supported stores, and dims or hides non-vegan products and ads with a label explaining why.
+- General web content mode: dims or flags meat-, dairy- and animal-material content on other sites, including shop product tiles and product pages, and leaves pages that are vegan overall alone.
+- Context cards with short, sourced facts.
+- Per-tab toolbar count, plus an optional all-clear check when a page has nothing non-vegan.
+- Search assist: suggests vegan searches on Google, Bing, DuckDuckGo, YouTube and Amazon.
+- Easy swaps: a "Try:" pill next to non-vegan items and a vegan search chip that rewrites your own query.
+- Audience slider: choose who it is for (Vegan, Flexitarian or Omni) to tune how results are presented.
+- Brand-site banners (all-vegan brands, brands with a vegan line, plant-based ideas on meat brands) and curated vegan picks.
+- Facebook and Marketplace posts and listings, and Gmail messages.
+- Share a find: pick something Vegan Lens found and share it; public posts add #VeganLens. Nothing is sent until you choose a destination.
+- Optional open-database lookups (off by default): sends only a barcode, or a brand + product name, to Open Food Facts / Open Beauty Facts.
+- Editable, updatable rule lists: edit keywords, patterns and brand lists in the built-in editor (stays on your device), or receive signed list updates.
+- Privacy: classification runs on your device and no browsing data is sent. Anonymous usage stats are opt-in and off by default.
+
+## Affiliate links & support (0.4.58, inactive until configured)
+Rules editor → section **monetization › affiliate** (`data.monetization.affiliate.amazon.tag`, e.g. `yourtag-20`) and **monetization › supportUrl** (`data.monetization.supportUrl`, https only). Empty = off/hidden. When a tag is set, only Vegan Lens-created Amazon links (swap "Try:" pills, vegan search chip) get `tag=`; site links are never rewritten; users can opt out in Settings; disclosure shows in link tooltips and About. Nothing is sent anywhere.
+
 ## What it does
 - **Search results**: green 🌱 badge + outline = likely vegan; dimmed/grayscale with "Not vegan: contains …" label = likely not vegan (click the label to restore); grey **?** = unknown.
 - **Product pages**: banner above the title with the verdict and matched ingredients, using title, ingredients/important-information, description, bullets and badges. If a UPC/EAN is listed, it also asks Open Food Facts (`ingredients_analysis_tags`).

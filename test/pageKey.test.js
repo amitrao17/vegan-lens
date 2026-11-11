@@ -27,5 +27,5 @@ test('iconPaths: red variants exist for every size', () => {
   for (const s in r) { assert.ok(r[s].endsWith('-red.png')); assert.ok(fs.existsSync(path.join(__dirname, '..', r[s]))); assert.strictEqual(g[s], m.action.default_icon[s]); }
 });
 test('manifest loads pageKey.js before every content script', () => {
-  for (const c of require('../manifest.json').content_scripts) assert.strictEqual(c.js[0], 'pageKey.js');
+  for (const c of require('../manifest.json').content_scripts) assert.strictEqual(c.js[c.js[0] === 'brand.js' ? 1 : 0], 'pageKey.js'); // 0.4.32: brand.js (attribution) may precede
 });

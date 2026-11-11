@@ -5,15 +5,9 @@
 // bare "Impossible"/"Ripple"/"Just" (common words) - only qualified forms are listed.
 (function (root) {
   'use strict';
-  const BUILTIN = [
-    ['Follow Your Heart', 'brand'], ['Vegenaise', 'product'], ['Beyond Meat', 'brand'], ['Beyond Burger', 'product'],
-    ['Impossible Foods', 'brand'], ['Impossible Burger', 'product'], ['Impossible Sausage', 'product'],
-    ['Tofurky', 'brand'], ['Daiya', 'brand'], ['Oatly', 'brand'], ['Violife', 'brand'], ["Miyoko's", 'brand'],
-    ['Field Roast', 'brand'], ['Gardein', 'brand'], ['So Delicious Dairy Free', 'brand'], ['Kite Hill', 'brand'],
-    ['Just Egg', 'product'], ['Earth Balance', 'brand'], ['Ripple Foods', 'brand'], ['Ripple Plant-Based', 'brand'],
-    ['Tofutti', 'brand'], ["Upton's Naturals", 'brand'], ['No Evil Foods', 'brand'], ['Nutiva', 'brand'],
-    ["Daring Foods", 'brand'], ['Simulate', 'brand'], ["Nurishh", 'brand'], ['Good Planet Foods', 'brand'],
-  ].map(([name, kind]) => ({ name, kind }));
+  // 0.4.52: rule data comes from rules/rules.json (see rules/rules.js); applyRules() re-runs when a signed list update lands.
+  const Rules = (typeof module !== 'undefined' && module.exports) ? require('./rules/rules.js') : root.VeganRules;
+  let BUILTIN, PICKS, NOT_VEGAN;
 
   // lower-case, drop apostrophes, every other non-alphanumeric run -> single space; padded for boundary matching
   const norm = s => ' ' + String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
@@ -35,7 +29,20 @@
   }
   const label = e => (e.kind === 'product' ? 'product: ' : 'brand: ') + e.name;
 
-  const api = { BUILTIN, match, norm, label, activeEntries };
+  // 0.4.51 vegan picks: vegan products/lines from generally non-vegan brands. Each checked by opening the brand's own page (2026-10-30).
+  // A pick needs BOTH the brand and the product wording in the same text; "collection" is the verified vegan-line page for the brand-site strip.
+  function pick(text) {
+    const t = String(text || '').replace(/[\u2018\u2019]/g, "'");
+    if (!t || NOT_VEGAN.test(t)) return null;
+    return PICKS.find(p => p.brandRe.test(t) && p.re.test(t) && !(p.not && p.not.test(t))) || null;
+  }
+  const pickByDomain = host => { const h = String(host || '').toLowerCase().replace(/\.$/, ''); return PICKS.find(p => h === p.domain || h.endsWith('.' + p.domain)) || null; };
+  function applyRules(D) {
+    ({ BUILTIN, PICKS, NOT_VEGAN } = D.brands);
+    try { Object.assign(api, { BUILTIN, PICKS }); } catch (e) { /* first run: api not built yet */ }
+  }
+  applyRules(Rules.data()); Rules.onChange(applyRules);
+  const api = { BUILTIN, match, norm, label, activeEntries, PICKS, pick, pickByDomain };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganBrands = api;
 })(typeof self !== 'undefined' ? self : this);

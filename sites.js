@@ -6,9 +6,13 @@
   'use strict';
   const GROCERY_HOST = /(^|\.)(?:giantfood|stopandshop|martinsfoods|giantfoodstores)\.com$/i;
   const AMAZON_HOST = /(^|\.)amazon\.[a-z.]+$/i;
+  // Restaurant supply (0.4.14): WebstaurantStore, Restaurant Depot (member.restaurantdepot.com, login-only). Same tile/hide path as grocery.
+  const RESTAURANT_HOST = /(^|\.)(?:webstaurantstore\.com|restaurantdepot\.com)$/i;
   const GROCERY_MATCHES = ['*://*.giantfood.com/*', '*://*.stopandshop.com/*', '*://*.martinsfoods.com/*', '*://*.giantfoodstores.com/*'];
+  const RESTAURANT_MATCHES = ['*://*.webstaurantstore.com/*', '*://member.restaurantdepot.com/*'];
+  const isRestaurantHost = h => RESTAURANT_HOST.test(String(h || ''));
   const MODES = ['hide', 'dim', 'badge'];
-  function siteOf(host) { host = String(host || ''); return GROCERY_HOST.test(host) ? 'grocery' : AMAZON_HOST.test(host) ? 'amazon' : null; }
+  function siteOf(host) { host = String(host || ''); return GROCERY_HOST.test(host) || RESTAURANT_HOST.test(host) ? 'grocery' : AMAZON_HOST.test(host) ? 'amazon' : null; }
   // Amazon keeps S.mode; grocery sites have their own setting (default hide).
   function effectiveMode(site, S) { S = S || {};
     if (site === 'grocery') return MODES.includes(S.groceryMode) ? S.groceryMode : 'hide';
@@ -37,10 +41,10 @@
   const allergenLabel = a => a === 'shellfish' ? 'shrimp' : a;
 
   // ---------- grocery tiles ----------
-  const PRODUCT_HREF = /\/(?:groceries\/)?products?\/[^?#]*[a-z0-9]/i;
+  const PRODUCT_HREF = /\/(?:groceries\/)?products?\/[^?#]*[a-z0-9]|^\/[a-z0-9][a-z0-9-]*\/\d{2,4}[a-z]{0,4}\d[a-z0-9]*\.html(?:[?#]|$)|\/(?:product-detail|item-detail|items?)\/[^?#]*[a-z0-9]/i;
   const PRICE = /\$\s?\d|\d+\s?¢|\b\d+\.\d{2}\b/;
   const TILE_SEL = "[data-testid*='product-tile' i], [data-testid*='product-card' i], [data-testid*='productTile' i], [data-testid*='productCard' i], [class*='product-tile' i], [class*='product-card' i], [class*='ProductTile' i], [class*='ProductCard' i], [class*='product-cell' i], [data-product-id], [data-productid], [data-sku]";
-  const LINK_SEL = "a[href*='/product/'], a[href*='/products/']";
+  const LINK_SEL = "a[href*='/product/'], a[href*='/products/'], a[href$='.html'], a[href*='.html?'], a[href*='/product-detail/'], a[href*='/item-detail/'], a[href*='/item/'], a[href*='/items/']";
   const TITLE_SEL = "[data-testid*='name' i], [data-testid*='title' i], [class*='product-name' i], [class*='productName' i], [class*='product-title' i], [class*='title' i], [class*='name' i], h2, h3, h4";
   const isProductHref = h => PRODUCT_HREF.test(String(h || '').replace(/^https?:\/\/[^/]+/i, ''));
   const hrefKey = h => String(h || '').replace(/^https?:\/\/[^/]+/i, '').replace(/[?#].*$/, '').replace(/\/$/, '').toLowerCase();
@@ -94,13 +98,42 @@
   }
   const isSponsored = el => /\bsponsored\b/i.test(textOf(el).slice(0, 400)) || !!(el.querySelector && el.querySelector("[class*='sponsor' i], [data-testid*='sponsor' i]"));
 
-  // ---------- Amazon search card title ----------
-  // Cards also hold hidden cart-popover <h2>s ("Quantity not updated", "Maximum Quantity Reached") before the product
+  // ---------- Amazon search + Best Sellers / p13n list cards (0.4.70) ----------
+  // Search cards also hold hidden cart-popover <h2>s ("Quantity not updated", "Maximum Quantity Reached") before the product
   // title, so the title recipe / labelled title heading wins over the first bare h2.
+  // Best Sellers, New Releases and related zgbs lists use a p13n grid: [id^=p13n-asin-index-] > [data-asin]
+  // > .zg-grid-general-faceout > .p13n-sc-uncoverable-faceout. Titles live in [class*="p13n-sc-css-line-clamp"]
+  // or the product-image alt, not in h2. Prefer those stable hooks over hashed _cDEzb_ classes.
+  const AMAZON_TILE_SEL = "div[data-component-type='s-search-result'], div[data-asin].s-result-item, li[data-asin].s-result-item, div[data-asin][data-component-type='sp-sponsored-result'], [id^='p13n-asin-index-'], .p13n-grid-content";
+  const cleanTitle = t => String(t || '').replace(/\s+/g, ' ').trim();
   function amazonTitleOf(el) {
     const n = el.querySelector('[data-cy=title-recipe] h2') || el.querySelector('h2[aria-label]') || el.querySelector('[data-cy=title-recipe]')
       || el.querySelector('h2.a-size-base-plus, h2.a-size-medium, .a-size-base-plus.a-text-normal, .a-size-medium.a-text-normal');
-    return String((n ? n.getAttribute('aria-label') || n.textContent : el.getAttribute('aria-label')) || '').replace(/\s+/g, ' ').trim();
+    const search = cleanTitle(n ? n.getAttribute('aria-label') || n.textContent : el.getAttribute('aria-label'));
+    if (search) return search;
+    const clamp = el.querySelector('[class*="p13n-sc-css-line-clamp"]');
+    const clampT = cleanTitle(clamp && (clamp.textContent || clamp.innerText));
+    if (clampT) return clampT;
+    for (const a of el.querySelectorAll('a[href*="/dp/"]')) {
+      if (a.getAttribute('aria-hidden') === 'true') continue;
+      const t = cleanTitle(a.textContent || a.innerText);
+      if (t && t.length > 2 && !/^\$/.test(t) && !/^\d[\d,.]*$/.test(t)) return t;
+    }
+    const img = el.querySelector('img.p13n-product-image[alt], img[alt]');
+    return cleanTitle(img && img.getAttribute('alt'));
+  }
+  function amazonIdOf(el) {
+    const direct = el.getAttribute && el.getAttribute('data-asin');
+    if (direct) return direct;
+    const inner = el.querySelector && el.querySelector('[data-asin]');
+    const id = inner && inner.getAttribute('data-asin');
+    if (id) return id;
+    const face = el.querySelector && el.querySelector('.p13n-sc-uncoverable-faceout[id]');
+    const faceId = face && (face.getAttribute && face.getAttribute('id') || face.id);
+    if (faceId && /^[A-Z0-9]{10}$/i.test(faceId)) return faceId;
+    const a = el.querySelector && el.querySelector('a[href*="/dp/"]');
+    const m = a && (a.getAttribute('href') || '').match(/\/dp\/([A-Z0-9]{10})/i);
+    return m ? m[1] : '';
   }
 
   // ---------- grocery product detail (text in, verdict-ready text out) ----------
@@ -115,7 +148,8 @@
   }
   function swapUrl(origin, query) {
     let o = '';
-    try { const u = new URL(origin); if (/^https?:$/.test(u.protocol) && GROCERY_HOST.test(u.hostname)) o = u.origin; } catch (e) {}
+    try { const u = new URL(origin); if (/^https?:$/.test(u.protocol) && /webstaurantstore/i.test(u.hostname)) return u.origin + '/search/' + encodeURIComponent(query).replace(/%20/g, '-') + '.html';
+      if (/^https?:$/.test(u.protocol) && GROCERY_HOST.test(u.hostname)) o = u.origin; } catch (e) {}
     return (o || 'https://giantfood.com') + '/product-search/' + encodeURIComponent(query);
   }
 
@@ -211,6 +245,6 @@
     return out.filter(c => !out.some(o => o !== c && o.contains(c)));
   }
   const hiddenNotice = n => `Vegan Lens hid ${n} non-vegan item${n === 1 ? '' : 's'}`;
-  const api = { GROCERY_HOST, GROCERY_MATCHES, siteOf, effectiveMode, parseAllergens, stripPrecautionary, allergenLabel, isProductHref, hrefKey, productHrefs, tileFromLink, findTiles, titleOfTile, detailTitleEl, amazonTitleOf, idOfTile, isSponsored, groceryDetailText, swapUrl, hiddenNotice, TILE_SEL, LINK_SEL, SECTION_RULES, SECTION_CANDIDATES, SEC_HIDDEN, sectionRulesFor, sectionOf, sectionContainer, hideSections, restoreSections, PROMO_BTN, findPromoCards, promoTitleOf, promoCardFrom };
+  const api = { GROCERY_HOST, GROCERY_MATCHES, RESTAURANT_HOST, RESTAURANT_MATCHES, isRestaurantHost, siteOf, effectiveMode, parseAllergens, stripPrecautionary, allergenLabel, isProductHref, hrefKey, productHrefs, tileFromLink, findTiles, titleOfTile, detailTitleEl, amazonTitleOf, amazonIdOf, AMAZON_TILE_SEL, idOfTile, isSponsored, groceryDetailText, swapUrl, hiddenNotice, TILE_SEL, LINK_SEL, SECTION_RULES, SECTION_CANDIDATES, SEC_HIDDEN, sectionRulesFor, sectionOf, sectionContainer, hideSections, restoreSections, PROMO_BTN, findPromoCards, promoTitleOf, promoCardFrom };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.VeganSites = api;
 })(typeof self !== 'undefined' ? self : this);

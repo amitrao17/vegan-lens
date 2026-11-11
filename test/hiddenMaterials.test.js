@@ -10,8 +10,8 @@ const NON = [
   'Goatskin Djembe Drum', 'Mandolin with Mother-of-Pearl Inlay', 'Ukulele Abalone Rosette', 'Violin with Shellac Finish',
   'Antique Ivory Piano Keys', 'Mammoth Ivory Guitar Nut', 'Walrus Tusk Carving',
   'Horsehair Shoe Shine Brush', 'Boar Bristle Hair Brush', 'Mulberry Silk Pillowcase', 'Goose Down Comforter',
-  'Merino Wool Socks', 'Cashmere Sweater', 'Shearling Slippers', 'Mohair Throw Blanket', 'Lanolin Nipple Cream',
-  'Casein Paint Set', 'Bone China Tea Cups', 'Lipstick with Carmine', 'Parka with Fur Trim Hood', 'Sable Brush Set for Watercolor',
+  'Merino Wool Socks', 'Cashmere Sweater', 'Mohair Throw Blanket', 'Lanolin Nipple Cream',
+  'Casein Paint Set', 'Bone China Tea Cups', 'Lipstick with Carmine', 'Sable Brush Set for Watercolor',
 ];
 const OK = [
   'Carbon Fiber Violin Bow with Synthetic Hair', 'Guitar with Tusq Nut and Saddle', 'Graph Tech Tusq Bridge Pins',
@@ -21,3 +21,12 @@ const OK = [
 ];
 for (const t of NON) test('hidden animal material: ' + t, () => assert.strictEqual(v(t), 'non-vegan', t));
 for (const t of OK) test('synthetic alternative not flagged: ' + t, () => assert.notStrictEqual(v(t), 'non-vegan', t));
+
+// 0.4.70: bare shearling / fur trim is Caution (not proof of animal fur) unless real-fur wording is present.
+const CAUTION_FUR = ['Shearling Slippers', 'Parka with Fur Trim Hood'];
+for (const t of CAUTION_FUR) test('ambiguous fur/shearling is caution, not non-vegan: ' + t, () => {
+  const r = C.classify(t, {});
+  assert.notStrictEqual(r.verdict, 'non-vegan', t);
+  assert.ok(r.caution && r.caution.length, r);
+});
+for (const t of ['Genuine Shearling Slippers', 'Parka with Real Fur Trim Hood']) test('real-fur wording still non-vegan: ' + t, () => assert.strictEqual(v(t), 'non-vegan', t));

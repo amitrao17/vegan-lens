@@ -49,7 +49,7 @@
     a.setAttribute('aria-label', st.tip);
     a.setAttribute('data-vl-person', p.name);
     a.textContent = st.text;
-    return a;
+    return (typeof VeganLensBrand !== 'undefined' ? VeganLensBrand.mark : typeof require === 'function' ? require('./brand.js').mark : (e => e))(a, { compact: true, doc });
   }
   // state: { counts: Map(name -> n) } persists across calls on one page so the cap is per page.
   function markRoot(rootNode, doc, index, state) {

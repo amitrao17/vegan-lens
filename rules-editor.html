@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Vegan Lens: edit rules</title>
+<link rel="stylesheet" href="rules-editor.css"></head><body>
+<h1>Vegan Lens rule list</h1>
+<p class="note">Edit the active rule list (keywords, patterns, brand lists, vegan picks, swaps). Patterns are strings: <code>{"$re": "...", "flags": "i"}</code>. Applied edits are stored only in this browser and override the built-in list and any downloaded update. Nothing leaves your device.</p>
+<p id="state" class="state"></p>
+<div class="bar">
+  <label>Section <select id="section"><option value="">Whole list</option></select></label>
+  <button type="button" id="validate">Validate</button>
+  <button type="button" id="apply">Apply</button>
+  <button type="button" id="export">Export JSON</button>
+  <label class="file">Import JSON <input type="file" id="import" accept="application/json,.json"></label>
+  <button type="button" id="reset">Reset to built-in</button>
+</div>
+<pre id="msg" class="msg" role="status"></pre>
+<textarea id="json" spellcheck="false" aria-label="Rule list JSON"></textarea>
+<script src="rules/rulesData.js"></script><script src="rules/rules.js"></script><script src="rules-editor.js"></script>
+</body></html>

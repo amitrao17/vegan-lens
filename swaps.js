@@ -3,41 +3,52 @@
 // Brand queries use only brands from veganBrands.js (whole-line vegan).
 (function (root) {
   'use strict';
+  // 0.4.52: rule data comes from rules/rules.json (see rules/rules.js); applyRules() re-runs when a signed list update lands.
+  const Rules = (typeof module !== 'undefined' && module.exports) ? require('./rules/rules.js') : root.VeganRules;
+  let RULES, KEYWORDS, ALREADY, FALSE_FRIENDS, AUDIENCES, AUDIENCE, CAT;
   // Rules in priority order (most specific first). `terms`: classifier matched labels (base label before " (")
   // that trigger the rule; `text`: optional regex the item title must also match.
-  const RULES = [
-    { id: 'whey-protein', terms: ['whey', 'casein', 'milk'], text: /\bprotein\b/i, label: 'plant protein powder', query: 'vegan protein powder' },
-    { id: 'ice-cream', terms: ['cream', 'milk', 'dairy'], text: /\bice[- ]?cream\b|\bgelato\b/i, label: 'dairy-free ice cream', query: 'So Delicious Dairy Free ice cream' },
-    { id: 'yogurt', terms: ['milk', 'dairy', 'cream'], text: /\by[oa]gh?urt\b/i, label: 'plant-based yogurt', query: 'vegan yogurt' },
-    { id: 'mayo', terms: ['egg'], text: /\bmayo(?:nnaise)?\b|\baioli\b/i, label: 'egg-free mayo', query: 'Vegenaise vegan mayo' },
-    { id: 'gummies', terms: ['gelatin'], label: 'gelatin-free gummies', query: 'vegan gummies' },
-    { id: 'whey', terms: ['whey', 'casein'], label: 'plant protein powder', query: 'vegan protein powder' },
-    { id: 'cheese', terms: ['cheese'], label: 'plant-based cheese', query: 'Violife cheese' },
-    { id: 'butter', terms: ['butter', 'ghee'], label: 'plant butter', query: 'Earth Balance vegan butter' },
-    { id: 'burger', terms: ['beef', 'meat'], text: /\bburgers?\b|\bpatt(?:y|ies)\b|\bground beef\b/i, label: 'plant-based burger', query: 'Beyond Burger' },
-    { id: 'sausage', terms: ['pork', 'meat', 'beef', 'chicken'], text: /\bsausages?\b|\bbratwurst\b|\bhot dogs?\b/i, label: 'plant-based sausage', query: 'Field Roast sausage' },
-    { id: 'bacon', terms: ['bacon'], label: 'plant-based bacon', query: 'vegan bacon' },
-    { id: 'deli', terms: ['pork', 'meat'], text: /\bham\b|\bdeli\b|\bturkey\b|\bslices?\b/i, label: 'plant-based deli slices', query: 'Tofurky deli slices' },
-    { id: 'chicken', terms: ['chicken'], label: 'plant-based chicken', query: 'Gardein chicken' },
-    { id: 'beef', terms: ['beef'], label: 'plant-based meat', query: 'Beyond Meat' },
-    { id: 'tuna', terms: ['fish'], text: /\btuna\b/i, label: 'plant-based tuna', query: 'vegan tuna' },
-    { id: 'salmon', terms: ['fish'], text: /\bsalmon\b/i, label: 'plant-based salmon', query: 'vegan salmon' },
-    { id: 'fish', terms: ['fish', 'anchovy'], label: 'plant-based seafood', query: 'vegan fish' },
-    { id: 'shrimp', terms: ['shrimp'], label: 'plant-based shrimp', query: 'vegan shrimp' },
-    { id: 'meat', terms: ['meat', 'pork'], label: 'plant-based meat', query: 'vegan meat' },
-    { id: 'egg', terms: ['egg', 'albumin'], label: 'plant-based egg', query: 'Just Egg' },
-    { id: 'milk', terms: ['milk', 'dairy', 'lactose', 'cream'], label: 'oat or soy milk', query: 'Oatly oat milk' },
-    { id: 'honey', terms: ['honey'], label: 'maple or agave syrup', query: 'vegan honey alternative' },
-    { id: 'leather-shoes', terms: ['leather', 'suede', 'nubuck'], text: /\b(?:shoes?|boots?|sneakers?|loafers?|sandals?|heels|oxfords?)\b/i, label: 'faux leather shoes', query: 'vegan leather shoes' },
-    { id: 'leather-bag', terms: ['leather', 'suede', 'nubuck'], text: /\b(?:bags?|purses?|handbags?|totes?|wallets?|backpacks?)\b/i, label: 'faux leather bag', query: 'vegan leather bag' },
-    { id: 'leather-belt', terms: ['leather', 'suede'], text: /\bbelts?\b/i, label: 'faux leather belt', query: 'vegan leather belt' },
-    { id: 'leather-jacket', terms: ['leather', 'suede'], text: /\bjackets?\b|\bcoats?\b/i, label: 'faux leather jacket', query: 'vegan leather jacket' },
-    { id: 'leather', terms: ['leather', 'suede', 'nubuck'], label: 'faux leather', query: 'vegan leather' },
-    { id: 'down-comforter', terms: ['down feathers', 'down', 'feather'], text: /\bcomforters?\b|\bduvets?\b|\bpillows?\b|\bquilts?\b/i, label: 'down-alternative bedding', query: 'down alternative comforter' },
-    { id: 'down', terms: ['down feathers', 'down', 'feather'], label: 'synthetic-fill jacket', query: 'vegan down alternative jacket' },
-    { id: 'wool', terms: ['wool', 'merino', 'cashmere', 'alpaca', 'mohair', 'angora'], label: 'cotton or acrylic knit', query: 'vegan sweater cotton' },
-    { id: 'silk', terms: ['silk'], label: 'satin or Tencel alternative', query: 'vegan silk alternative' },
+  // 0.4.44 keyword map (one source of truth for product pills, web 'Try:' fabric links and the search chip).
+  // Category-level vegan search terms only: no brands, no product claims. Longest (most specific) key wins.
+  // Search chip: put the swap into the user's own query ('ground beef recipes' -> 'plant-based ground recipes').
+  function swapQuery(q) {
+    const s = String(q || '').trim(); const m = swapForText(s); if (!m) return null;
+    const e = KEYWORDS.find(x => x.k === m.key); return s.replace(e.re, m.query).replace(/\s+/g, ' ');
+  }
+  function swapForText(text) {
+    const t = String(text || '');
+    if (!t.trim() || ALREADY.test(t) || FALSE_FRIENDS.test(t)) return null;
+    let best = null;
+    for (const e of KEYWORDS) if (e.re.test(t) && (!best || e.k.length > best.k.length)) best = e;
+    return best ? { key: best.k, query: best.q } : null;
+  }
+  // Same-store search URL; web search fallback. Only http(s) store origins are reused.
+  const STORES = [
+    [/(^|\.)amazon\.[a-z.]+$/, (o, q) => o + '/s?k=' + q],
+    [/(^|\.)(?:giantfood|stopandshop|martinsfoods|giantfoodstores)\.com$/, (o, q) => o + '/product-search/' + q],
+    [/(^|\.)webstaurantstore\.com$/, (o, q) => o + '/search/' + q.replace(/%20/g, '-') + '.html'],
+    [/(^|\.)sephora\.com$/, (o, q) => o + '/search?keyword=' + q],
+    [/(^|\.)ulta\.com$/, (o, q) => o + '/search?search=' + q],
+    [/(^|\.)target\.com$/, (o, q) => o + '/s?searchTerm=' + q],
+    [/(^|\.)walmart\.com$/, (o, q) => o + '/search?q=' + q],
+    [/(^|\.)zappos\.com$/, (o, q) => 'https://www.zappos.com/search?term=' + q],
+    [/(^|\.)etsy\.com$/, (o, q) => 'https://www.etsy.com/search?q=' + q],
+    [/(^|\.)instacart\.com$/, (o, q) => o + '/store/s?k=' + q],
   ];
+  function storeSearchUrl(href, query) {
+    const q = encodeURIComponent(String(query || ''));
+    try { const u = new URL(href); if (/^https?:$/.test(u.protocol)) for (const [re, f] of STORES) if (re.test(u.hostname)) return f(u.origin, q); } catch (e) {}
+    return 'https://www.google.com/search?q=' + q;
+  }
+  // 0.4.44 audience wording (Settings > 'Who is this for?'). Wording only: verdicts and dim/hide never change.
+  function audienceOf(a) { return AUDIENCES.includes(a) ? a : 'vegan'; }
+  function say(aud, key) { return AUDIENCE[audienceOf(aud)][key]; }
+  // Softer headline for flexitarian/omni: 'Contains meat' etc. Vegan wording stays 'Likely NOT vegan'.
+  function verdictHead(aud, matched) {
+    const a = audienceOf(aud); if (a === 'vegan') return AUDIENCE.vegan.notVegan;
+    const t = (matched || []).join(' '); const c = CAT.find(([re]) => re.test(t));
+    return c ? 'Contains ' + c[1] : AUDIENCE[a].notVegan;
+  }
   const base = m => String(m || '').replace(/\s*\(.*$/, '').trim().toLowerCase();
 
   // matched: classifier `matched` labels; text: item title (+ details). Returns {id,label,query} or null.
@@ -54,6 +65,32 @@
     try { const u = new URL(origin); if (/^https?:$/.test(u.protocol) && /(^|\.)amazon\.[a-z.]+$/.test(u.hostname)) o = u.origin; } catch (e) {}
     return (o || 'https://www.amazon.com') + '/s?k=' + encodeURIComponent(query);
   }
-  const api = { RULES, pickSwap, swapUrl };
+  // 0.4.58 affiliate links (inactive while the tag is empty). Only for links Vegan Lens itself creates (swap pills,
+  // 'Try:' links, the vegan search chip) that point to a listed Amazon domain. Never site links, never verdicts, no network.
+  let MON = { affiliate: { amazon: { tag: '', param: 'tag', domains: [], disclosure: '' } }, supportUrl: '' };
+  const amz = () => (MON.affiliate && MON.affiliate.amazon) || {};
+  function affiliateConfigured() { return !!amz().tag; }
+  function affiliateActive(S) { return affiliateConfigured() && !(S && S.affiliate === false); }
+  function affiliateUrl(href, S) {
+    if (!affiliateActive(S)) return href;
+    const A = amz();
+    try {
+      const u = new URL(href); const h = u.hostname.replace(/^www\./, '');
+      if (u.protocol !== 'https:' || !(A.domains || []).some(d => h === d || h.endsWith('.' + d))) return href;
+      if (u.searchParams.has(A.param || 'tag')) return href; // never replace a tag that is already there
+      u.searchParams.set(A.param || 'tag', A.tag); return u.toString();
+    } catch (e) { return href; }
+  }
+  const affiliateDisclosure = () => amz().disclosure || 'As an Amazon Associate, Vegan Lens earns from qualifying purchases.';
+  const supportUrl = () => (MON.supportUrl && /^https:\/\//.test(MON.supportUrl)) ? MON.supportUrl : '';
+  // Applies the tag; returns true when it was added (caller then shows the disclosure in the link title).
+  function tagLink(a, S) { const before = a.href, after = affiliateUrl(before, S); if (after === before) return false; a.href = after; a.title = ((a.title ? a.title + '\n' : '') + affiliateDisclosure()); a.rel = 'noopener noreferrer sponsored'; a.dataset.vlAffiliate = '1'; return true; }
+  function applyRules(D) {
+    if (D.monetization) MON = D.monetization;
+    ({ RULES, KEYWORDS, ALREADY, FALSE_FRIENDS, AUDIENCES, AUDIENCE, CAT } = D.swaps);
+    try { Object.assign(api, { RULES, KEYWORDS, AUDIENCES, AUDIENCE }); } catch (e) { /* first run: api not built yet */ }
+  }
+  applyRules(Rules.data()); Rules.onChange(applyRules);
+  const api = { affiliateConfigured, affiliateActive, affiliateUrl, affiliateDisclosure, supportUrl, tagLink, RULES, KEYWORDS, pickSwap, swapUrl, swapForText, swapQuery, storeSearchUrl, AUDIENCES, AUDIENCE, audienceOf, say, verdictHead };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.VeganSwaps = api;
 })(typeof self !== 'undefined' ? self : this);

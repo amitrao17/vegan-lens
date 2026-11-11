@@ -1,0 +1,14 @@
+[
+  {
+    "id": "example-oat-001",
+    "brand": "Example Oat Co. (example data)",
+    "categories": ["milk", "cheese", "butter"],
+    "text": "Example: 10% off oat milk (example data)",
+    "code": "EXAMPLE10",
+    "url": "https://example.com/",
+    "expires": "2099-12-31",
+    "source": "https://example.com/",
+    "certified": "Example certification (example data)",
+    "example": true
+  }
+]
