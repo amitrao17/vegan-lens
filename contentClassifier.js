@@ -4,7 +4,7 @@
   // 0.4.52: rule data comes from rules/rules.json (see rules/rules.js); applyRules() re-runs when a signed list update lands.
   const Rules = (typeof module !== 'undefined' && module.exports) ? require('./rules/rules.js') : root.VeganRules;
   let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS;
-  let PLANT_WORD, ANIMAL_RX, VEGAN_RX, ANIMAL_ALT, NEGATED;
+  let PLANT_WORD, ANIMAL_RX, VEGAN_RX, ANIMAL_ALT, NEGATED, RENOUNCE;
   // [regex source, weight, label]
   // Plants that are commonly cut and cooked as "steaks" (0.4.12: kohlrabi, celery, king oyster, beet, zucchini, ...).
   // "Nobody wants meat anymore", "no one asks for meat", "tastes better than meat", "who needs meat": meat-rejection = vegan signal.
@@ -22,9 +22,11 @@
 
   // Community / subreddit / source label that is vegan-ish (r/vegan, r/AskVegans, c/PlantBasedDiet, r/WFPB...). exvegan(s) is not.
   function communityVegan(name) {
-    const n = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!n || /exvegan|antivegan|nonvegan/.test(n)) return false;
-    return /vegan|plantbased|wfpb/.test(n);
+    const raw = String(name || '').toLowerCase();
+    if (!raw) return false;
+    if (/ex[- ]?vegan|anti[- ]?vegan|non[- ]?vegan/.test(raw)) return false;
+    const n = raw.replace(/[^a-z0-9]/g, '');
+    return /vegan|plantbased|plantpowered|wfpb/.test(n);
   }
   // 0.4.39: ambiguous foods (burger, sausage, nuggets, patty, meatballs, hot dogs, "meat") are commonly plant-based. When the same
   // unit (title + snippet + alt) names a plant protein or vegan word anywhere, they are not scored as animal. Explicit meats
@@ -70,7 +72,7 @@
       t = shadeNeutralize(t, opts.beauty);
       t = t.replace(PLANT_LEATHER, () => { veganHits += 1; return ' _ '; });
       if (plantUnit) t = t.replace(AMBIG, m => (EXPLICIT_MEAT.test(m) ? m : (veganHits += 0.34, ' _ ')));
-      for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += /vegan|plant|cauliflower|cabbage|celery|celeriac|kohlrabi|beet|zucchini|courgette|squash|carrot|eggplant|aubergine|portobello|tempeh|garden|tofu|mushroom|beyond|impossible|seitan|jackfruit|oat|soy|almond|coconut|meatless|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
+      for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += (PLANT_STEAK && new RegExp(PLANT_STEAK, 'i').test(m)) || /vegan|plant|garden|oat|soy|almond|coconut|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
       // 0.4.62 noun-head rule: an animal word modifying equipment/supplies ('poultry fencing', 'chicken wire', 'fish tank filter',
       // 'cattle panel', 'pig ear tag') is not evidence; the head noun is the thing sold. Food heads (breast, fillets...) are excluded.
       if (MATERIAL_NAMES) t = t.replace(MATERIAL_NAMES, ' _ '); // 0.4.64: 'Für Elise', 'Fur Affinity', German 'für'
@@ -79,6 +81,10 @@
       t = t.replace(MEAT_REJECT, () => { veganHits += 1; rejects++; return ' _ '; });
       t = t.replace(new RegExp('["\u201c\u201d\'](?:' + ANIMAL_ALT + ')\\b[^"\u201c\u201d]{0,25}["\u201c\u201d\']', 'g'), () => { veganHits += 1; return ' _ '; });
       t = t.replace(NEGATED, () => { veganHits += 1; return ' _ '; });
+      // 0.4.71: 'stopped buying/eating X', 'quit X', 'gave up X', 'no more X', 'instead of / better than X'
+      // when a plant alternative is in the same unit — the animal word is contrasted, not promoted.
+      const plantAlt = veganHits || PLANT_WORD.test(t) || (PLANT_UNIT && PLANT_UNIT.test(t));
+      if (plantAlt && RENOUNCE) t = t.replace(RENOUNCE, () => { veganHits += 1; return ' _ '; });
       if (where === 'title') { headText = t; if (PLANT_WORD.test(t)) plantWord = true; }
       for (const [re, w, l] of VEGAN_RX) { const n = count(re, t); if (n) { pos += w * segW * Math.min(n, 2); reasons.push('+' + l); } }
       const e = count(ETHICS, t); if (e) { ethics += e; reasons.push('+ethics/welfare framing'); }
@@ -93,6 +99,9 @@
     }
     pos += veganHits * 3;
     if (veganHits) reasons.push('+plant-based alternative');
+    // 0.4.71: a YouTube/web creator name with vegan/plant-based/plant-powered words is context, not food evidence
+    // (names are already stripped). It leans ambiguous titles vegan but does not override a clearly meaty title.
+    if (!opts.communityVegan && [].concat(parts.creators || []).some(communityVegan)) { pos += 3; reasons.push('+vegan/plant-based creator'); }
     // Ethics / activism framing neutralises the animal terms entirely and leans positive.
     if (ethics) { pos += 3 * ethics; neg *= 0.1; }
     // Meat-rejection phrasing ("nobody wants meat anymore! These steaks..."): the remaining animal words describe the plant dish.
@@ -187,6 +196,8 @@
     VEGAN_RX = VEGAN.map(([s, w, l]) => [rx(s), w, l]);
     ANIMAL_ALT = ANIMAL.map(a => a[0]).join('|');
     NEGATED = new RegExp('\\b(?:(?:needs?|need|with|has|have|had|contains?|zero|uses?|using)\\s+no|no|without|w/o|minus|skip(?:ping)?\\s+the|ditch(?:ing)?\\s+the|forget(?:\\s+about)?|instead\\s+of|replac(?:e|es|ing)(?:\\s+the)?|swap(?:ping)?\\s+(?:out\\s+)?(?:the\\s+)?|better\\s+than|not)\\s+(?:any\\s+|the\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b|\\b(?:' + ANIMAL_ALT + ')[- ](?:free|less)\\b', 'g');
+    // 0.4.71: renouncing or contrasting an animal item (applied only when a plant alternative is also in the unit).
+    RENOUNCE = new RegExp('\\b(?:(?:i|we|they|he|she|who)\\s+)?(?:stopped|quit(?:ted|ting)?|gave\\s+up|giving\\s+up|no\\s+more|cut(?:ting)?\\s+out|ditch(?:ed|ing)?)\\s+(?:buying|eating|getting|ordering|cooking|making|having|using)?\\s*(?:the\\s+|any\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b|\\b(?:instead\\s+of|better\\s+than|rather\\s+than)\\s+(?:the\\s+|any\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b', 'g');
     for (const k of Object.keys(LABEL_W)) delete LABEL_W[k]; for (const [, w, l] of ANIMAL) LABEL_W[l] = Math.min(LABEL_W[l] || 9, w);
     try { Object.assign(api, { CAUTION_WEB, STYLE_MATERIALS, HEADER_VEGAN, THRESH }); } catch (e) { /* first run: api not built yet */ }
   }

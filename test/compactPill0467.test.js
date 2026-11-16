@@ -62,9 +62,9 @@ function makeBadge(doc, S, cls, text, title, extra) {
   return b;
 }
 
-test('versions agree at 0.4.70', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.70');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.70');
+test('versions agree at 0.4.71', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.71');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.71');
 });
 
 test('compact default: icon-only pill, full text in tip + aria-label', () => {

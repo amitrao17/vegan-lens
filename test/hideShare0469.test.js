@@ -3,9 +3,9 @@ const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 
-test('versions agree at 0.4.70', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.70');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.70');
+test('versions agree at 0.4.71', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.71');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.71');
 });
 
 test('compact CSS hides the share arrow at rest and shows it when expanded', () => {

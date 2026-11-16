@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vegan Lens",
-  "version": "0.4.70",
+  "version": "0.4.71",
   "description": "Spot vegan and non-vegan products and content as you shop, search and browse, with sourced context and easy vegan swaps.",
   "permissions": [
     "storage",

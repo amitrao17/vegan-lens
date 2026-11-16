@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "listVersion": "2026.11.04.1",
+ "listVersion": "2026.11.16.1",
  "data": {
   "classifier": {
    "ANIMAL": [
     [
-     "steaks?|steakhouses?|cheesesteaks?|ribeye|sirloin|t-bone|filet mignon|porterhouse",
+     "steaks?|steakhouses?|cheesesteaks?|ribeyes?|sirloin|t-bone|filet mignon|porterhouse",
      3,
      "steak"
     ],
@@ -166,7 +166,7 @@
      "plant-based"
     ],
     [
-     "tofu|tempeh|seitan|jackfruit|lentils?|chickpeas?|falafel|hummus",
+     "lion['’]?s[- ]mane(?:[- ]mushrooms?)?|tofu|tempeh|seitan|jackfruit|lentils?|chickpeas?|falafel|hummus",
      1.5,
      "plant protein"
     ],
@@ -185,7 +185,7 @@
     "$re": "\\b(?:factory farm(?:s|ing)?|slaughter(?:house)?s?|animal (?:cruelty|welfare|abuse|suffering|agriculture)|cruelty|undercover investigation|why i (?:quit|stopped|gave up) (?:eating )?(?:meat|dairy|animal|being a (?:carnivore|meat))|(?:quit|quitting|giving up|gave up|stopped eating|ditch(?:ed|ing)?|cut(?:ting)? out|ban(?:s|ned|ning)?|less) (?:meat|dairy|beef|eating meat)|went vegan|go(?:ing)? vegan|meat (?:tax|reduction)|methane|emissions|rescued?|activists?|protest|(?:the )?(?:dairy|meat|egg|poultry|beef|pork|fishing|fur|leather|wool|animal) industr(?:y|ies)|(?:is|are|isn't|can) (?:dairy|meat|eggs?|milk|eating meat|cheese|fishing|hunting) (?:really )?(?:ethical|cruel|wrong|humane|okay|ok)|ethical(?:ly)? (?:dairy|meat|eggs?|farm(?:ing)?)|(?:make|making) (?:it|dairy|farming) (?:more )?ethical|(?:just )?learned (?:about|how)|what do i do now|(?:quit|quitting|ditch(?:ed|ing)?) (?:milk|cheese|eggs)|becom(?:e|ing) vegan|turn(?:ed|ing)? vegan|(?:ban|bans|banned|banning|end|ends|ending|abolish(?:ed|ing)?|outlaw(?:ed|ing)?|stop(?:ping)?|against|protests? (?:against|at)|deaths? (?:at|in)|cruelty (?:of|in|at)) (?:the )?(?:horse racing|greyhound racing|dog racing|rodeos?|bullfight(?:ing|s)?|cockfight(?:ing|s)?|jallikattu|iditarod|fox hunting|camel racing|animal sports|dog ?sledding|polo)|racehorse deaths?|horse deaths?|greyhound deaths?)\\b",
     "flags": "g"
    },
-   "PLANT_STEAK": "cauliflower|cabbage|(?:king |king oyster |oyster )?mushrooms?|king oyster|tofu|celeriac|celery|kohlrabi|portobello|eggplant|aubergine|watermelon|seitan|jackfruit|tempeh|beet(?:root)?|zucchini|courgette|squash|carrot|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean",
+   "PLANT_STEAK": "lion['’]?s[- ]mane(?:[- ]mushrooms?)?|cauliflower|cabbage|(?:king |king oyster |oyster )?mushrooms?|king oyster|tofu|celeriac|celery|kohlrabi|portobello|eggplant|aubergine|watermelon|seitan|jackfruit|tempeh|beet(?:root)?|zucchini|courgette|squash|carrot|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean",
    "MEAT_REJECT": {
     "$re": "\\b(?:(?:nobody|no ?one|no-one)(?: even)? (?:wants?|asks? for|misses|needs?|craves?) (?:any )?meat|(?:tastes? )?better than (?:any )?meat|who needs (?:any )?meat|(?:won't|wont|don't|dont|never) miss (?:the )?meat|forget (?:about )?meat)\\b",
     "flags": "g"
@@ -196,7 +196,7 @@
    },
    "FALSE_FRIENDS": [
     {
-     "$re": "\\b(?:cauliflower|cabbage|(?:king |king oyster |oyster )?mushrooms?|king oyster|tofu|celeriac|celery|kohlrabi|portobello|eggplant|aubergine|watermelon|seitan|jackfruit|tempeh|beet(?:root)?|zucchini|courgette|squash|carrot|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean)[- ](?:steaks?|burgers?|bacon|ribs|wings|sausages?|meatballs?|chicken|cheese|milk|butter|ice cream|bbq|meat|fish|tuna|jerky|nuggets?)\\b",
+     "$re": "\\b(?:lion['’]?s[- ]mane(?:[- ]mushrooms?)?|cauliflower|cabbage|(?:king |king oyster |oyster )?mushrooms?|king oyster|tofu|celeriac|celery|kohlrabi|portobello|eggplant|aubergine|watermelon|seitan|jackfruit|tempeh|beet(?:root)?|zucchini|courgette|squash|carrot|vegan|plant[- ]based|veggie|black bean|beyond|impossible|meatless|bean)[- ](?:steaks?|burgers?|bacon|ribs|wings|sausages?|meatballs?|chicken|cheese|milk|butter|ice cream|bbq|meat|fish|tuna|jerky|nuggets?)\\b",
      "flags": "g"
     },
     {
@@ -270,7 +270,7 @@
     "flags": "g"
    },
    "PLANT_UNIT": {
-    "$re": "\\b(?:mushrooms?|portobellos?|beans?|lentils?|tofu|tempeh|seitan|jackfruit|chickpeas?|quinoa|falafel|veggie|vegetarian|vegan|plant[- ]based|beyond|impossible|meatless|meat[- ]free|cauliflower|walnut|soy)\\b",
+    "$re": "\\b(?:lion['’]?s[- ]mane(?:[- ]mushrooms?)?|mushrooms?|portobellos?|beans?|lentils?|tofu|tempeh|seitan|jackfruit|chickpeas?|quinoa|falafel|veggie|vegetarian|vegan|plant[- ]based|beyond|impossible|meatless|meat[- ]free|cauliflower|walnut|soy)\\b",
     "flags": ""
    },
    "EXPLICIT_MEAT": {
