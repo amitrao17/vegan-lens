@@ -102,6 +102,11 @@
     return r.score > 0 && /\+plant|\+vegan|\+product:/i.test(reasons);
   }
   const isYouTubeHost = h => /(^|\.)youtube\.com$/.test(String(h || ''));
+  // 0.4.72: parse the channel out of a YouTube title aria-label, including LIVE cards ("N watching") as well as views / time-ago.
+  function channelFromAria(label) {
+    const m = /\bby (.{3,60}?)(?: \d[\d,.]*[KMB]?\+? (?:views|watching)| \d+ (?:second|minute|hour|day|week|month|year)s? ago| LIVE\b|$)/i.exec(String(label || ''));
+    return m ? m[1].replace(/\s+/g, ' ').trim() : '';
+  }
   // distinct video ids linked from an element
   function videoIds(el) {
     const ids = new Set();
@@ -318,7 +323,7 @@
     return n;
   }
   const unitText = el => el ? (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 6000) : '';
-  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, isFacebookHost, postAuthor, YT_CARD, isYouTubeHost, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage };
+  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, isFacebookHost, postAuthor, YT_CARD, isYouTubeHost, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganWebUnits = api;
 })(typeof self !== 'undefined' ? self : this);

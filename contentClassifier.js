@@ -3,7 +3,7 @@
   'use strict';
   // 0.4.52: rule data comes from rules/rules.json (see rules/rules.js); applyRules() re-runs when a signed list update lands.
   const Rules = (typeof module !== 'undefined' && module.exports) ? require('./rules/rules.js') : root.VeganRules;
-  let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS;
+  let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH;
   let PLANT_WORD, ANIMAL_RX, VEGAN_RX, ANIMAL_ALT, NEGATED, RENOUNCE;
   // [regex source, weight, label]
   // Plants that are commonly cut and cooked as "steaks" (0.4.12: kohlrabi, celery, king oyster, beet, zucchini, ...).
@@ -51,7 +51,7 @@
     // headline weighs double vs snippet/alt
     const segs = [[parts.headline, 2, 'title'], [parts.tags, 1.5, 'tag'], [parts.snippet, 1, 'snippet'], [parts.alt, 0.75, 'alt']].filter(s => s[0]).map(s => [stripPeople(s[0], parts.creators), s[1], s[2]]).filter(s => String(s[0]).replace(/[\s_]+/g, '')); // 0.4.45 tags: category chips (strong)
     let neg = 0, pos = 0, ethics = 0; const reasons = [], about = {};
-    let veganHits = 0, headNeg = 0, rejects = 0, plantWord = false, headText = ''; const matches = [];
+    let veganHits = 0, headNeg = 0, rejects = 0, plantWord = false, headText = '', cultivated = false, cultivatedDish = false; const matches = [];
     const unitText = segs.map(x => String(x[0]).toLowerCase()).join(' ');
     const wearCtx = WEAR_CTX.test(unitText);
     // 0.4.64: fur/leather need positive material evidence. In a music/arts/game unit with no product/fashion context,
@@ -70,6 +70,17 @@
       const pk = Brands && Brands.pick && Brands.pick(rawText);
       if (pk) { pos += 3 * segW; reasons.push('+vegan pick: ' + pk.brand + ' ' + pk.line); t = t.replace(/\b(?:mayo(?:nnaise)?|ice cream|dairy|milk|cream)\b/g, ' _ '); }
       t = shadeNeutralize(t, opts.beauty);
+      // 0.4.72: cultivated/lab-grown meat is not slaughter-meat evidence and is never vegan (it still uses animal cells).
+      // News/discussion about it is labelled, not hidden. Actual dishes, recipes and product listings stay non-vegan.
+      if (CULTIVATED_MEAT) {
+        CULTIVATED_MEAT.lastIndex = 0;
+        if (CULTIVATED_MEAT.test(t)) {
+          cultivated = true;
+          const dish = (parts.kind === 'dish' || parts.kind === 'product') || (CULTIVATED_DISH && CULTIVATED_DISH.test(t));
+          if (dish) cultivatedDish = true;
+          else { CULTIVATED_MEAT.lastIndex = 0; t = t.replace(CULTIVATED_MEAT, ' _ '); }
+        }
+      }
       t = t.replace(PLANT_LEATHER, () => { veganHits += 1; return ' _ '; });
       if (plantUnit) t = t.replace(AMBIG, m => (EXPLICIT_MEAT.test(m) ? m : (veganHits += 0.34, ' _ ')));
       for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += (PLANT_STEAK && new RegExp(PLANT_STEAK, 'i').test(m)) || /vegan|plant|garden|oat|soy|almond|coconut|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
@@ -126,8 +137,32 @@
     // Titles naming the animal product ('Fresh Seafood Market', 'Buy Fresh Fish') score in the title and keep the normal verdict.
     let mixed = false;
     if (verdict === 'nonvegan' && MIXED_VENUE && MIXED_GOODS && parts.headline && !headNeg && MIXED_VENUE.test(headText) && MIXED_GOODS.test(unitText)) { verdict = 'discussion'; mixed = true; reasons.push('mixed venue listing'); }
+    // 0.4.72: lab-grown/cultivated meat is not vegan (animal cells). A recipe, menu dish or product listing stays
+    // non-vegan like any meat. News, opinion or "will you try it?" discussion is labelled, not hidden, and never vegan.
+    if (cultivated) {
+      if (cultivatedDish) {
+        if (verdict !== 'nonvegan') verdict = 'nonvegan';
+        if (!reasons.includes('-cultivated meat')) reasons.push('-cultivated meat');
+      } else {
+        // Leftover animal words (e.g. "the future of fish" after "cell-based salmon") are still the same topic.
+        verdict = 'discussion';
+        reasons.push('cultivated meat discussion');
+      }
+    }
+    const veganCreator = [].concat(parts.creators || []).some(communityVegan);
+    const head = String(parts.headline || '');
+    const clearRecipe = /\b(?:recipes?|how to (?:cook|grill|smoke|make|fry|bake)|grilled|smoked|baked|fried|homemade|mukbang|cook-?off)\b/i.test(head);
+    const meatyDish = /\bmeat[- ]lovers?\b/i.test(head);
+    const onlyGenericMeat = matches.length && matches.every(m => m.label === 'meat');
+    // A vegan-named channel must not turn a clearly meaty dish or recipe vegan on its own.
+    if (veganCreator && verdict === 'vegan' && matches.length && !veganHits && (clearRecipe || meatyDish || !onlyGenericMeat)) {
+      verdict = 'nonvegan';
+    }
+    if (veganCreator && !cultivatedDish && (verdict === 'nonvegan' || verdict === 'vegan') && onlyGenericMeat && !clearRecipe && !meatyDish) {
+      verdict = 'discussion'; reasons.push('generic meat on a vegan-named channel');
+    }
     const topic = Object.entries(about).sort((a, b) => b[1] - a[1])[0];
-    return { verdict, score, reasons: [...new Set(reasons)], topic: topic ? topic[0] : null, about, matches, ...(mixed ? { mixed: true } : {}) };
+    return { verdict, score, reasons: [...new Set(reasons)], topic: topic ? topic[0] : null, about, matches, ...(mixed ? { mixed: true } : {}), ...(cultivated && verdict === 'discussion' ? { cultivated: true } : {}) };
   }
 
   // 0.4.28 shopping cautions (never dims): cosmetics that often contain carmine/beeswax/lanolin; latex condoms (casein).
@@ -190,7 +225,7 @@
     return classify(t.slice(0, 1500), opts || {}).verdict === 'vegan';
   }
   function applyRules(D) {
-    ({ ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS } = D.classifier);
+    ({ ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH } = D.classifier);
     PLANT_WORD = new RegExp('\\b(?:' + PLANT_STEAK + '|vegan|plant|vegetables?|veg|lentils?|chickpeas?|beans?|tofu|garden)\\b');
     ANIMAL_RX = ANIMAL.map(([s, w, l]) => [rx(s), w, l]);
     VEGAN_RX = VEGAN.map(([s, w, l]) => [rx(s), w, l]);

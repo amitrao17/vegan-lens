@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "listVersion": "2026.11.16.1",
+ "listVersion": "2026.11.17.1",
  "data": {
   "classifier": {
    "ANIMAL": [
@@ -448,6 +448,14 @@
    },
    "MIXED_GOODS": {
     "$re": "\\b(?:fruits?|vegetables?|veggies|produce|greens|baked goods|breads?|pastr(?:y|ies)|flowers?|plants|seedlings|herbs|crafts?|jams?|preserves|soaps?|candles?|coffee|kombucha|mushrooms?)\\b",
+    "flags": "i"
+   },
+   "CULTIVATED_MEAT": {
+    "$re": "\\b(?:lab[- ]grown|cultivated|cell[- ]based|cell[- ]cultured|slaughter[- ]free|cultured)[- ](?:meats?|chickens?|beef|pork|steaks?|salmon|tuna|fish|seafood|shrimp|prawns?|burgers?|nuggets?|bacon|sausages?|turkey|duck|lamb|wagyu|brisket|poultry|ham|ribs|venison|veal|hot dogs?)\\b",
+    "flags": "gi"
+   },
+   "CULTIVATED_DISH": {
+    "$re": "\\b(?:recipes?|how to (?:cook|grill|smoke|make|fry|bake|prepare|season|roast)|homemade|ingredients?|cookbook|\\d+\\s*(?:oz|ounces?|lbs?|pounds?|kg|grams?|packs?|ct|count))\\b",
     "flags": "i"
    }
   },

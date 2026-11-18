@@ -84,7 +84,7 @@
   function creators(el) {
     const out = new Set();
     for (const n of [...el.querySelectorAll(CREATOR_SEL)].slice(0, 6)) { const t = (n.innerText || n.textContent || '').replace(/\s+/g, ' ').replace(/^by\s+/i, '').trim(); if (t.length >= 3 && t.length <= 60) out.add(t); }
-    if (YT) { const m = /\bby (.{3,60}?)(?: \d[\d,.]*[KMB]? views| \d+ (?:second|minute|hour|day|week|month|year)s? ago|$)/i.exec(el.querySelector('#video-title, a#video-title-link, [aria-label]')?.getAttribute('aria-label') || ''); if (m) out.add(m[1].trim()); }
+    if (YT) { const label = el.querySelector('#video-title, a#video-title-link, #video-title-link, [aria-label]')?.getAttribute('aria-label') || ''; const ch = U.channelFromAria(label); if (ch) out.add(ch); }
     return [...out];
   }
   // Reddit/Lemmy-style community label: shreddit-post attributes, or an 'r/Name' / 'c/Name' link/text in the card.
@@ -164,8 +164,13 @@
       return;
     }
     if (r.verdict === 'discussion') { // 0.4.63: light label, no dim/blur/hide; not counted in the toolbar number (counts.discussion only)
-      if (!el.querySelector('.vl-w-chip-discuss')) { const d = chip((r.mixed ? say('mixed', 'Mixed listing: includes ') : say('discussion', 'Discussion: about ')) + (r.topic || 'animal products')); d.classList.add('vl-w-chip-discuss'); d.title = 'Vegan Lens: ' + (r.mixed ? 'mixed venue listing' : 'discussion title') + ' (not dimmed)\n' + U.matchText(r) + '\nAdded by Vegan Lens extension'; el.prepend(d); }
-      el.dataset.vlWhy = (r.mixed ? 'mixed listing including ' : 'discussion about ') + (r.topic || 'animal products'); return; }
+      if (!el.querySelector('.vl-w-chip-discuss')) {
+        const lab = r.cultivated ? 'Cultivated meat' : (r.mixed ? say('mixed', 'Mixed listing: includes ') : say('discussion', 'Discussion: about ')) + (r.topic || 'animal products');
+        const d = chip(lab); d.classList.add('vl-w-chip-discuss');
+        d.title = 'Vegan Lens: ' + (r.cultivated ? 'cultivated meat (uses animal cells, not vegan)' : r.mixed ? 'mixed venue listing' : 'discussion title') + ' (not dimmed)\n' + U.matchText(r) + '\nAdded by Vegan Lens extension';
+        el.prepend(d);
+      }
+      el.dataset.vlWhy = r.cultivated ? 'cultivated meat' : (r.mixed ? 'mixed listing including ' : 'discussion about ') + (r.topic || 'animal products'); return; }
     if (r.verdict !== 'nonvegan') { cautionPill(el); return; }
     // YouTube: dim/hide the card's contents but keep the chip inside the card (a sibling chip lands in the grid's flex/grid
     // flow, is clipped or re-rendered away by YouTube, and the filter on the card would blur the chip too).

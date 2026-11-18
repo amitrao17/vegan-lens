@@ -1,3 +1,9 @@
+## 0.4.72 — Cultivated meat: news is labelled, products stay meat
+- Cultivated / lab-grown / cell-based / cell-cultured / slaughter-free meat (and chicken, beef, salmon, and other meat nouns) is never treated as vegan or as plant evidence: it still uses animal cells. Plain "cultured" only counts when it sits right in front of a meat noun, so cultured butter and yogurt stay dairy.
+- News, opinion and "will you try it?" discussion (like "Lab Grown Meat is For Sale in California Will you Try it?") stays visible with a neutral **Cultivated meat** chip (Vegan Lens icon and name) and is not added to the toolbar count.
+- Actual products, grocery/Amazon listings, Uber Eats dishes and recipes for cooking it get the normal non-vegan verdict, like any other meat.
+- YouTube LIVE cards now yield the channel name from aria-labels that say "N watching" (not only "views" or "time ago"), so a name like Vegan Hacks is available as context. Generic "meat" titles from a vegan-named channel lean to a discussion label rather than a hide; clearly meaty dishes and recipes, including "Meat Lovers Pizza" and "Grilled Chicken Recipe", still dim.
+
 ## 0.4.71 — Plant steaks, contrast phrasing, vegan-named creators
 - YouTube (and other web) titles where a plant protein sits right in front of a meat noun are plant evidence, not a steak/burger/etc. dish. That includes lion's mane (straight or curly apostrophe), mushroom, cauliflower, tofu, seitan, jackfruit, eggplant, watermelon, beet and carrot steaks, same as the existing cauliflower/mushroom steak rule.
 - Renouncing or contrasting an animal food — "stopped buying/eating X", "quit X", "gave up X", "no more X", "instead of X", "better than X" — does not count as promoting it when a plant alternative is also in the title. "I stopped eating plants and only eat steak" is not cleared. "I Stopped Buying Ribeyes" with no plant stand-in still dims.
