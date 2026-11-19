@@ -99,6 +99,11 @@
     t = t.replace(/\b(?:coconut|oat|almond|soy|rice|cashew|plant|hemp|pea|macadamia|flax|pistachio)[- ]?(?:milk|cream|cheese|creamer|beverage|drink)s?\b/g, ' plantmilk ');
     // "Dairy Free Cheddar Slices": dairy-free cheese/milk analogues
     t = t.replace(/\b(?:(?:dairy|milk)[- ]free|vegan|plant[- ]based)\s+(?:(?!(?:and|or|with|plus|real|not)\b)[a-z]+\s+){0,2}(?:cheddar|mozzarella|parmesan|cheeses?|butter|creamer|cream cheese|ice cream|milk)(?:\s+cheeses?)?\b/g, ' plantmilk ');
+    // 0.4.73: unit-level dairy-free claims (zero dairy, non-dairy, 100% dairy-free, made from cashews) also
+    // clear cheese/butter/brie/cream/milk words in the same title, not only when they sit next to the claim.
+    // Lactose-free is deliberately omitted: it still describes dairy milk.
+    t = t.replace(/\b(?:(?:100%\s+)?dairy[- ]free|non[- ]dairy|(?:zero|no|without|w\/o)\s+dairy|made from (?:cashews?|almonds?|oats?|nuts?|soy|coconuts?|peas?))\b/g, ' dairyfree ');
+    if (/\bdairyfree\b/.test(t)) t = t.replace(/\b(?:cheese ?boards?|cheeseboards?|charcuterie|fondue|ice cream|cream cheese|cheeses?|brie|cheddar|mozzarella|parmesan|burrata|dairy|milk|(?:grass|butter|goat|sheep|cow|skim|whole)milk|butters?|creams?|yogurt|gelato|custard|ghee|whey|casein)\b/g, ' plantmilk ');
     t = t.replace(/\b(?:cream of tartar|ice cream maker|butterfly|butternut|buttercup|eggplant|creamy peanut|cheesecloth|fish ?tank|milk ?thistle|milkweed|hamper|hammer|hamilton|graham|shampoo|silken tofu|silky|silk (?:finish|touch|matte|sheen|smooth|press|screen(?:ed)?|road|n silk|flower|plant|tree|oak|worm free)|silk ?finish|silkscreen|silk-like|liquid silk|silk ?therapy|silk ?skin|chickpeas?|hen of the woods)\b/g, ' ');
     // restaurant supply false friends (0.4.14): utensils/flavourings named after butter, cookie butter, vegan worcestershire
     t = t.replace(/\b(?:cookie|biscoff|speculoos|pistachio|hazelnut|nut|seed)[- ]butter\b|\bbutter[- ](?:spreaders?|knife|knives|dish(?:es)?|curlers?|warmers?|bells?|crocks?|molds?|moulds?|slicers?|pats? dispensers?|flavou?red|flavou?ring|substitute)\b|\b(?:butter|cheese|egg)[- ]?(?:slicers?|graters?|cutters?|separators?|rings?|poachers?|cookers?|cartons? holders?)\b/g, ' utensil ');

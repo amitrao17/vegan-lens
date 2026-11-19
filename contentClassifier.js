@@ -3,7 +3,7 @@
   'use strict';
   // 0.4.52: rule data comes from rules/rules.json (see rules/rules.js); applyRules() re-runs when a signed list update lands.
   const Rules = (typeof module !== 'undefined' && module.exports) ? require('./rules/rules.js') : root.VeganRules;
-  let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH;
+  let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH, DAIRY_FREE, DAIRY_FOODS, PAREVE;
   let PLANT_WORD, ANIMAL_RX, VEGAN_RX, ANIMAL_ALT, NEGATED, RENOUNCE;
   // [regex source, weight, label]
   // Plants that are commonly cut and cooked as "steaks" (0.4.12: kohlrabi, celery, king oyster, beet, zucchini, ...).
@@ -49,10 +49,14 @@
     const thr = THRESH[opts.sensitivity] || THRESH.med;
     const parts = typeof input === 'string' ? { headline: input } : (input || {});
     // headline weighs double vs snippet/alt
-    const segs = [[parts.headline, 2, 'title'], [parts.tags, 1.5, 'tag'], [parts.snippet, 1, 'snippet'], [parts.alt, 0.75, 'alt']].filter(s => s[0]).map(s => [stripPeople(s[0], parts.creators), s[1], s[2]]).filter(s => String(s[0]).replace(/[\s_]+/g, '')); // 0.4.45 tags: category chips (strong)
+    const segs = [[parts.headline, 2, 'title'], [parts.tags, 1.5, 'tag'], [parts.snippet, 1, 'snippet'], [parts.alt, 0.75, 'alt'], [parts.author, 1, 'author']].filter(s => s[0]).map(s => [stripPeople(s[0], parts.creators), s[1], s[2]]).filter(s => String(s[0]).replace(/[\s_]+/g, '')); // 0.4.45 tags: category chips (strong). 0.4.73: author/page name too, so a vegan brand in the byline is scored.
     let neg = 0, pos = 0, ethics = 0; const reasons = [], about = {};
     let veganHits = 0, headNeg = 0, rejects = 0, plantWord = false, headText = '', cultivated = false, cultivatedDish = false; const matches = [];
     const unitText = segs.map(x => String(x[0]).toLowerCase()).join(' ');
+    // 0.4.73: a dairy-free claim anywhere in the post/ad unit clears cheese/butter/brie/cream/milk words in every segment.
+    // Kosher Pareve supports "not dairy" but is not vegan on its own (pareve can include eggs or fish).
+    const dairyFreeUnit = !!(DAIRY_FREE && (DAIRY_FREE.lastIndex = 0, DAIRY_FREE.test(unitText)));
+    const pareveUnit = !!(PAREVE && PAREVE.test(unitText));
     const wearCtx = WEAR_CTX.test(unitText);
     // 0.4.64: fur/leather need positive material evidence. In a music/arts/game unit with no product/fashion context,
     // bare 'fur'/'leather'/'suede' tokens are not evidence (e.g. 'Fur Elise ... Ukulele TAB').
@@ -70,6 +74,19 @@
       const pk = Brands && Brands.pick && Brands.pick(rawText);
       if (pk) { pos += 3 * segW; reasons.push('+vegan pick: ' + pk.brand + ' ' + pk.line); t = t.replace(/\b(?:mayo(?:nnaise)?|ice cream|dairy|milk|cream)\b/g, ' _ '); }
       t = shadeNeutralize(t, opts.beauty);
+      // 0.4.73: neutralize dairy-free claims first so "dairy" inside "dairy-free" / "non-dairy" / "zero dairy" never scores,
+      // and (when the unit has such a claim) cheese, cheese board, butter, brie, cream and milk are cleared too.
+      if (DAIRY_FREE) {
+        DAIRY_FREE.lastIndex = 0;
+        if (DAIRY_FREE.test(t) || dairyFreeUnit) {
+          DAIRY_FREE.lastIndex = 0;
+          t = t.replace(DAIRY_FREE, () => { veganHits += 1; return ' _ '; });
+          if (DAIRY_FOODS) { DAIRY_FOODS.lastIndex = 0; t = t.replace(DAIRY_FOODS, () => { veganHits += 0.34; return ' _ '; }); }
+        } else if (pareveUnit && DAIRY_FOODS) {
+          DAIRY_FOODS.lastIndex = 0;
+          t = t.replace(DAIRY_FOODS, ' _ ');
+        }
+      }
       // 0.4.72: cultivated/lab-grown meat is not slaughter-meat evidence and is never vegan (it still uses animal cells).
       // News/discussion about it is labelled, not hidden. Actual dishes, recipes and product listings stay non-vegan.
       if (CULTIVATED_MEAT) {
@@ -207,9 +224,11 @@
   // inUndimmedUnit: the image sits in a classified unit that was NOT dimmed -> blur only on a high-confidence alt.
   const ALT_HIGH = -3;
   const cleanAlt = t => String(t || '').replace(/^\s*(?:r|u)\/[\w-]+\s*[-\u2013\u2014:|]\s*/i, '').replace(/^(?:may be an? )?(?:image|photo|picture) of /i, '');
-  function altBlur(alt, opts, inUndimmedUnit) {
+  function altBlur(alt, opts, inUndimmedUnit, context) {
     const t = cleanAlt(alt); if (t.length < 3) return { blur: false, r: null, why: 'short' };
-    const r = classify(t, opts || {});
+    // 0.4.73: image-level blur inside a post/ad must also apply the post's own text (dairy-free copy, brand, etc.).
+    const ctx = String(context || '').replace(/\s+/g, ' ').trim();
+    const r = classify(ctx.length >= 8 ? { headline: ctx.slice(0, 1500), alt: t } : t, opts || {});
     if (r.verdict !== 'nonvegan') return { blur: false, r, why: 'not-nonvegan' };
     if (inUndimmedUnit && r.score > ALT_HIGH) return { blur: false, r, why: 'low-confidence-in-undimmed-unit' };
     return { blur: true, r, why: inUndimmedUnit ? 'high-confidence' : 'alt' };
@@ -225,12 +244,12 @@
     return classify(t.slice(0, 1500), opts || {}).verdict === 'vegan';
   }
   function applyRules(D) {
-    ({ ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH } = D.classifier);
+    ({ ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH, DAIRY_FREE, DAIRY_FOODS, PAREVE } = D.classifier);
     PLANT_WORD = new RegExp('\\b(?:' + PLANT_STEAK + '|vegan|plant|vegetables?|veg|lentils?|chickpeas?|beans?|tofu|garden)\\b');
     ANIMAL_RX = ANIMAL.map(([s, w, l]) => [rx(s), w, l]);
     VEGAN_RX = VEGAN.map(([s, w, l]) => [rx(s), w, l]);
     ANIMAL_ALT = ANIMAL.map(a => a[0]).join('|');
-    NEGATED = new RegExp('\\b(?:(?:needs?|need|with|has|have|had|contains?|zero|uses?|using)\\s+no|no|without|w/o|minus|skip(?:ping)?\\s+the|ditch(?:ing)?\\s+the|forget(?:\\s+about)?|instead\\s+of|replac(?:e|es|ing)(?:\\s+the)?|swap(?:ping)?\\s+(?:out\\s+)?(?:the\\s+)?|better\\s+than|not)\\s+(?:any\\s+|the\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b|\\b(?:' + ANIMAL_ALT + ')[- ](?:free|less)\\b', 'g');
+    NEGATED = new RegExp('\\b(?:(?:needs?|need|with|has|have|had|contains?|uses?|using)\\s+no|zero|no|without|w/o|minus|skip(?:ping)?\\s+the|ditch(?:ing)?\\s+the|forget(?:\\s+about)?|instead\\s+of|replac(?:e|es|ing)(?:\\s+the)?|swap(?:ping)?\\s+(?:out\\s+)?(?:the\\s+)?|better\\s+than|not)\\s+(?:any\\s+|the\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b|\\b(?:' + ANIMAL_ALT + ')[- ](?:free|less)\\b', 'g');
     // 0.4.71: renouncing or contrasting an animal item (applied only when a plant alternative is also in the unit).
     RENOUNCE = new RegExp('\\b(?:(?:i|we|they|he|she|who)\\s+)?(?:stopped|quit(?:ted|ting)?|gave\\s+up|giving\\s+up|no\\s+more|cut(?:ting)?\\s+out|ditch(?:ed|ing)?)\\s+(?:buying|eating|getting|ordering|cooking|making|having|using)?\\s*(?:the\\s+|any\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b|\\b(?:instead\\s+of|better\\s+than|rather\\s+than)\\s+(?:the\\s+|any\\s+|real\\s+)?(?:' + ANIMAL_ALT + ')\\b', 'g');
     for (const k of Object.keys(LABEL_W)) delete LABEL_W[k]; for (const [, w, l] of ANIMAL) LABEL_W[l] = Math.min(LABEL_W[l] || 9, w);

@@ -59,7 +59,7 @@
     return [...new Set([...lines, ...extra])].join(' . ').slice(0, 900);
   }
   const DAIRY = /^(?:cheese|milk|butter|cream|yogurt|dairy|whey|casein|ghee|mozzarella|cheddar|parmesan)$/i;
-  const dairyFreeOnly = (text, matched) => /\bdairy[- ]free\b/i.test(text) && matched.length && matched.every(m => DAIRY.test(m));
+  const dairyFreeOnly = (text, matched) => /\b(?:(?:100%\s+)?dairy[- ]free|non[- ]dairy|(?:zero|no|without|w\/o)\s+dairy|made from (?:cashews?|almonds?|oats?|nuts?|soy|coconuts?|peas?))\b/i.test(text) && matched.length && matched.every(m => DAIRY.test(m));
   const api = { animalListing, cardParts, price, adTiles, adText, dairyFreeOnly };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   root.VeganMarketplace = api;

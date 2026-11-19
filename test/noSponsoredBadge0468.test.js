@@ -3,9 +3,9 @@ const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 
-test('versions agree at 0.4.72', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.72');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.72');
+test('versions agree at 0.4.73', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.73');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.73');
 });
 
 test('content.js badge copy has no Sponsored prefix and no ad dot', () => {

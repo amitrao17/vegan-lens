@@ -352,7 +352,7 @@
   const unitKey = (el, parts) => parts.headline + '|' + [...U.videoIds(el)].join(',');
   function resetUnit(el) {
     el.classList.remove('vl-w-unit', 'vl-w-vegan', 'vl-w-revealed', ...U.DIM_CLASSES); el._vlKey = null;
-    (el._vlCardImgs || []).forEach(i => { i.classList.remove('vl-img-blur', 'vl-img-card'); const n = i.nextElementSibling; if (n && n.classList.contains('vl-blur-label')) n.remove(); }); el._vlCardImgs = null;
+    (el._vlCardImgs || []).forEach(i => { i.classList.remove('vl-img-blur', 'vl-img-card'); clearBlurLabel(i); }); el._vlCardImgs = null;
     const cp = el.querySelector && el.querySelector(':scope > .vl-w-caution'); if (cp) { cp.remove(); counts.caution = Math.max(0, (counts.caution || 0) - 1); } delete el.dataset.vlCaution;
     delete el.dataset.vlW; delete el.dataset.vlAd; el.classList.remove('vl-w-ad'); if (el._vlChip) { el._vlChip.remove(); el._vlChip = null; } seen.delete(el);
   }
@@ -444,18 +444,26 @@
     const fig = img.closest('figure'), cap = fig && fig.querySelector('figcaption');
     return [img.alt, img.title, img.getAttribute('aria-label'), cap && cap.textContent].filter(Boolean).join(' . ').replace(/^(?:may be an? )?(?:image|photo|picture) of /i, '').slice(0, 300);
   }
-  // 0.4.46: every blur carries attribution: 'Vegan Lens · blurred: <reason> · show' right after the image (click = unblur).
+  function blurHost(img) { return (img && img.parentElement) || null; }
+  function clearBlurLabel(img) {
+    const n = img.nextElementSibling; if (n && n.classList.contains('vl-blur-label')) n.remove();
+    const host = blurHost(img);
+    if (host) { [...host.children].filter(c => c.classList && c.classList.contains('vl-blur-label')).forEach(c => c.remove()); host.classList.remove('vl-blur-host'); }
+  }
+  // 0.4.46: every blur carries attribution: 'Vegan Lens · blurred: <reason> · show' (click = unblur).
+  // 0.4.73: pin the label at the top-left of the image host; never hide or unload the image itself.
   function blurLabel(img, reason) {
-    if (!img.parentElement || (img.nextElementSibling && img.nextElementSibling.classList.contains('vl-blur-label'))) return;
+    const host = blurHost(img); if (!host || host.querySelector(':scope > .vl-blur-label')) return;
+    host.classList.add('vl-blur-host');
     const l = document.createElement('span'); l.className = 'vl-blur-label'; l.setAttribute('role', 'button'); l.tabIndex = 0;
     l.textContent = 'blurred: ' + String(reason || 'animal products').slice(0, 40) + ' \u00b7 show'; MARK(l);
     const show = e => { e.preventDefault(); e.stopPropagation(); unblurImg(img); };
     l.addEventListener('click', show, true); l.addEventListener('keydown', e => (e.key === 'Enter' || e.key === ' ') && show(e));
-    img.insertAdjacentElement('afterend', l);
+    host.appendChild(l);
   }
   function unblurImg(img) {
     img.classList.remove('vl-img-blur', 'vl-img-card'); if (img.dataset) img.dataset.vlShown = '1'; img.classList.add('vl-img-shown');
-    const n = img.nextElementSibling; if (n && n.classList.contains('vl-blur-label')) n.remove();
+    clearBlurLabel(img);
   }
   function blurReason(r) { return (r && (r.topic || (r.labels && r.labels[0]) || (r.matches && r.matches[0] && r.matches[0].label))) || 'animal products'; }
   const veganUnitCache = new WeakMap();
@@ -475,7 +483,10 @@
       // 0.4.33: any classified unit (incl. containers/neutral posts) that is not dimmed -> only high-confidence alts blur.
       const owner = img.closest('[data-vl-w]');
       const undimmed = !!owner && owner.dataset.vlW !== 'nonvegan' && !isDimmed(owner);
-      const ab = C.altBlur ? C.altBlur(t, S, undimmed) : { blur: C.classify(t, S).verdict === 'nonvegan', r: null };
+      // 0.4.73: classify the image with the post/ad unit's own text, so dairy-free copy clears a cheese-board alt.
+      const ctxUnit = (owner && owner.dataset && owner.dataset.vlW !== 'container' && owner) || (img.closest && img.closest('[data-vl-w]:not([data-vl-w=container]), article, [role=article]'));
+      const postCtx = (ctxUnit && ((U.unitText && U.unitText(ctxUnit)) || ctxUnit.innerText || ctxUnit.textContent || '')) || '';
+      const ab = C.altBlur ? C.altBlur(t, S, undimmed, postCtx) : { blur: C.classify(postCtx ? { headline: postCtx, alt: t } : t, S).verdict === 'nonvegan', r: null };
       if (!ab.blur) { if (ab.r && ab.r.verdict === 'nonvegan') dbg('img:skip-' + ab.why, img, ab.r); continue; }
       const r = ab.r;
       if (inVeganUnit(img)) { dbg('img:skip-vegan-unit', img, r); continue; } // 0.4.46 email/article is vegan overall

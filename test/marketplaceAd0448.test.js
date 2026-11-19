@@ -26,7 +26,8 @@ test('aria-label on the tile image is read too', () => {
   assert.strictEqual(verdict(M.adTiles(doc)[0]), 'non-vegan');
 });
 test('dairy-free cheese ad (Rebel Cheese) and plant leathers are not flagged', () => {
-  assert.strictEqual(verdict(M.adTiles(grid([ad('https://l.facebook.com/l.php?u=rebelcheese', 'Shop now', 'Rebel Cheese', 'Dairy-Free Meltable Mozzarella')]))[0]), 'skip');
+  // 0.4.73: this tile classifies vegan (dairy-free mozzarella + Rebel Cheese brand), not merely a dairyFreeOnly skip.
+  assert.notStrictEqual(verdict(M.adTiles(grid([ad('https://l.facebook.com/l.php?u=rebelcheese', 'Shop now', 'Rebel Cheese', 'Dairy-Free Meltable Mozzarella')]))[0]), 'non-vegan');
   assert.notStrictEqual(verdict(M.adTiles(grid([ad('https://x.example', '', 'Desserto', 'Cactus leather tote, built to last')]))[0]), 'non-vegan');
   assert.strictEqual(C.classify('Dairy-Free Meltable Mozzarella', {}).verdict, 'vegan');
 });

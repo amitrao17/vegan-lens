@@ -1,3 +1,11 @@
+## 0.4.73 — Dairy-free posts stay visible; carousel images stay blurred, not blank
+- Dairy-free wording in the same post or ad — "zero dairy", "dairy-free", "non-dairy", "100% dairy-free", "made from cashews/nuts/oats" — now clears cheese, cheese board, butter, brie, cream and milk words in that unit. "Dairy" inside those claims is no longer scored as dairy. Lactose-free milk is unchanged (still dairy).
+- Kosher Pareve is supporting evidence that a cheese/butter/milk mention is not dairy, but it is not vegan on its own (pareve can include eggs or fish). A pareve smoked salmon still dims.
+- Image-level blur inside a post or ad now classifies the image with the post's own text, so a "cheese board" alt does not blur when the post says "100% dairy-free" or "zero dairy".
+- Rebel Cheese is on the always-vegan brand list and brand-site list (Austin cashew cheese maker; site: "America's most awarded artisan vegan cheese brand" and "Every product is lactose-free, cholesterol-free, and 100% plant-based."). A Facebook page name like Rebel Cheese is scored as a brand, not only words in the headline.
+- Hide-mode in-card units no longer use `display:none` on photos. Blurred images stay rendered with the green blur filter (never a removed `src` or `opacity:0`), and the blur label is pinned at the top-left of the image box like other in-card chips. This was leaving Facebook carousel cells as a blank gray box with "Hidden: about …" sitting in the middle.
+- Fix: the Rebel Cheese Hanukkah Cheese Board Facebook ad ("Eight nights. Zero dairy", "100% dairy-free", "made from cashews") was hidden and both carousel images were blurred, with the left cell emptying out.
+
 ## 0.4.72 — Cultivated meat: news is labelled, products stay meat
 - Cultivated / lab-grown / cell-based / cell-cultured / slaughter-free meat (and chicken, beef, salmon, and other meat nouns) is never treated as vegan or as plant evidence: it still uses animal cells. Plain "cultured" only counts when it sits right in front of a meat noun, so cultured butter and yogurt stay dairy.
 - News, opinion and "will you try it?" discussion (like "Lab Grown Meat is For Sale in California Will you Try it?") stays visible with a neutral **Cultivated meat** chip (Vegan Lens icon and name) and is not added to the toolbar count.

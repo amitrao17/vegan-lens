@@ -7,9 +7,9 @@ const YT = { requireHeadline: true };
 const TITLE = "I Stopped Buying Ribeyes - This Lion's Mane Steak Is Better";
 const TITLE_CURLY = "I Stopped Buying Ribeyes - This Lion\u2019s Mane Steak Is Better";
 
-test('versions agree at 0.4.72', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.72');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.72');
+test('versions agree at 0.4.73', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.73');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.73');
 });
 
 test("Lion's Mane Steak title is vegan, including a curly apostrophe", () => {

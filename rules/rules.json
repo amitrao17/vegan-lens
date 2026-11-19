@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "listVersion": "2026.11.17.1",
+ "listVersion": "2026.11.18.1",
  "data": {
   "classifier": {
    "ANIMAL": [
@@ -457,6 +457,18 @@
    "CULTIVATED_DISH": {
     "$re": "\\b(?:recipes?|how to (?:cook|grill|smoke|make|fry|bake|prepare|season|roast)|homemade|ingredients?|cookbook|\\d+\\s*(?:oz|ounces?|lbs?|pounds?|kg|grams?|packs?|ct|count))\\b",
     "flags": "i"
+   },
+   "DAIRY_FREE": {
+    "$re": "\\b(?:(?:100%\\s+)?dairy[- ]free|non[- ]dairy|(?:zero|no|without|w/o|0)\\s+dairy|made from (?:cashews?|almonds?|oats?|nuts?|soy|coconuts?|peas?))\\b",
+    "flags": "gi"
+   },
+   "DAIRY_FOODS": {
+    "$re": "\\b(?:cheese ?boards?|cheeseboards?|charcuterie|fondue|ice cream|cream cheese|cheeses?|brie|cheddar|mozzarella|parmesan|burrata|dairy|milk|(?:grass|butter|goat|sheep|cow|skim|whole)milk|butters?|creams?|yogurt|gelato|custard|ghee|whey|casein)\\b",
+    "flags": "gi"
+   },
+   "PAREVE": {
+    "$re": "\\b(?:kosher\\s+)?pareve\\b",
+    "flags": "i"
    }
   },
   "brands": {
@@ -495,6 +507,10 @@
     },
     {
      "name": "Daiya",
+     "kind": "brand"
+    },
+    {
+     "name": "Rebel Cheese",
      "kind": "brand"
     },
     {
@@ -767,6 +783,14 @@
      "cat": "food",
      "source": "https://daiyafoods.helpscoutdocs.com/article/61-are-your-products-vegan-and-plant-based",
      "sourceName": "Daiya FAQ: \"All Daiya products are plant based and dairy free\""
+    },
+    {
+     "brand": "Rebel Cheese",
+     "domain": "rebelcheese.com",
+     "verdict": "vegan",
+     "cat": "food",
+     "source": "https://rebelcheese.com/pages/rebel-intro",
+     "sourceName": "Rebel Cheese FAQ: \"America's most awarded artisan vegan cheese brand\" and \"Every product is lactose-free, cholesterol-free, and 100% plant-based.\""
     },
     {
      "brand": "Miyoko's Creamery",

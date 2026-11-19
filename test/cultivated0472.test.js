@@ -9,9 +9,9 @@ const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const YT = { requireHeadline: true };
 const TITLE = 'Lab Grown Meat is For Sale in California Will you Try it?';
 
-test('versions agree at 0.4.72', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.72');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.72');
+test('versions agree at 0.4.73', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.73');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.73');
 });
 
 test('YouTube news/discussion about cultivated meat is labelled, not vegan, not hidden', () => {
