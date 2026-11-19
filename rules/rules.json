@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "listVersion": "2026.11.18.1",
+ "listVersion": "2026.11.19.1",
  "data": {
   "classifier": {
    "ANIMAL": [
@@ -236,7 +236,7 @@
      "flags": "g"
     },
     {
-     "$re": "\\b(?:buttery smooth|butterfl(?:y|ies)|butterfingers|butternut|cream of the crop|crème de la crème|creamed (?:by|in)|ice cream sandwich android|cold turkey|turkey's|in turkey|türkiye|cheesy (?:pickup lines|movie|jokes)|big cheese|egged on|egghead|easter egg|egg on (?:their|his|her) face|milk(?:ing|ed)? (?:it|the)|chicken-hearted|duck(?:ed|ing|s)? (?:out|the question|question)|lame duck|sitting duck|red herring|fish out of water|cold fish|bigger fish to fry|plenty of fish|meat and potatoes of|meat of the|in the flesh|bring home the bacon|save (?:my|your|our) bacon|hot dog(?:ging)?! |top dog|witch hunt|job hunt(?:ing)?|house hunt(?:ing)?|treasure hunt|hunter biden|bug hunt|bounty hunter|(?:mushroom|truffle|morel|ghost|storm|fossil|planet|exoplanet|comet|meteorite|aurora|eclipse|treasure|bargain|deal|easter egg|scavenger) hunt(?:ing|ers?|s)?|(?:hunt(?:ing|ers?|s)?|chas(?:e|ing)) (?:for )?(?:[\\w'-]+ ){0,3}(?:leaves|foliage|colou?rs|planets|exoplanets|comets|asteroids|galax(?:y|ies)|stars|black holes|meteor(?:ite)?s|auroras?|eclipses?|satellites?|fossils|dinosaurs|ghosts|storms|tornado(?:e)?s|signals|aliens|life|water|mushrooms|truffles|morels|antiques|bargains|deals|sales|bugs|vulnerabilit(?:y|ies)|clues|answers|treasure|gold|jobs?|apartments?|homes?|houses?|talent)|headhunt(?:er|ing)?|vegan suede|faux suede|micro ?suede|faux leather|leather[- ]look|leather[- ]like|wool[- ]free|faux wool|vegan wool|faux shearling|vegan shearling|fur ?baby|fur ?babies|furry friends?|faux fur|vegan leather|leather[- ]free|fake fur|mushroom leather|pleather|cod(?:e|ing|ec)|salmon[- ]colou?red|tuna\\.js)\\b",
+     "$re": "\\b(?:buttery smooth|butterfl(?:y|ies)|butterfingers|butternut|cream of the crop|crème de la crème|creamed (?:by|in)|ice cream sandwich android|cold turkey|turkey vultures?|turkey's|in turkey|(?:travel|trip|tours?|vacation|holiday|flights?) (?:to |in |around )?turkey|visit(?:ing|s)? turkey|türkiye|cheesy (?:pickup lines|movie|jokes)|big cheese|egged on|egghead|easter egg|egg on (?:their|his|her) face|milk(?:ing|ed)? (?:it|the)|chicken-hearted|duck(?:ed|ing|s)? (?:out|the question|question)|lame duck|sitting duck|red herring|fish out of water|cold fish|bigger fish to fry|plenty of fish|meat and potatoes of|meat of the|in the flesh|bring home the bacon|save (?:my|your|our) bacon|hot dog(?:ging)?! |top dog|witch hunt|job hunt(?:ing)?|house hunt(?:ing)?|treasure hunt|hunter biden|bug hunt|bounty hunter|(?:mushroom|truffle|morel|ghost|storm|fossil|planet|exoplanet|comet|meteorite|aurora|eclipse|treasure|bargain|deal|easter egg|scavenger) hunt(?:ing|ers?|s)?|(?:hunt(?:ing|ers?|s)?|chas(?:e|ing)) (?:for )?(?:[\\w'-]+ ){0,3}(?:leaves|foliage|colou?rs|planets|exoplanets|comets|asteroids|galax(?:y|ies)|stars|black holes|meteor(?:ite)?s|auroras?|eclipses?|satellites?|fossils|dinosaurs|ghosts|storms|tornado(?:e)?s|signals|aliens|life|water|mushrooms|truffles|morels|antiques|bargains|deals|sales|bugs|vulnerabilit(?:y|ies)|clues|answers|treasure|gold|jobs?|apartments?|homes?|houses?|talent)|headhunt(?:er|ing)?|vegan suede|faux suede|micro ?suede|faux leather|leather[- ]look|leather[- ]like|wool[- ]free|faux wool|vegan wool|faux shearling|vegan shearling|fur ?baby|fur ?babies|furry friends?|faux fur|vegan leather|leather[- ]free|fake fur|mushroom leather|pleather|cod(?:e|ing|ec)|salmon[- ]colou?red|tuna\\.js)\\b",
      "flags": "g"
     }
    ],
@@ -468,6 +468,10 @@
    },
    "PAREVE": {
     "$re": "\\b(?:kosher\\s+)?pareve\\b",
+    "flags": "i"
+   },
+   "AMBIG_FOOD_CTX": {
+    "$re": "\\b(?:thighs?|breasts?|legs?|wings?|drumsticks?|cutlets?|tenders?|fillets?|filets?|roasts?|braised|brined|smoked|gravy|stuffing|giblets?|sandwich(?:es)?|soups?|stews?|casseroles?|pot pies?|burgers?|nuggets?|sausages?|dinners?|recipes?|cooked|cooking|roasting|baking|fried|grilled|baked|carved|leftovers?|confit|poached|stewed|saut[eé]ed|breaded|battered|marinat(?:e|ed|ing)|seasoned|cider[- ]braised)\\b",
     "flags": "i"
    }
   },

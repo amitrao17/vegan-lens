@@ -34,7 +34,7 @@
     if (kind(ref) === 'array' && ref.length && v.length) { const r0 = ref[0]; for (let i = 0; i < v.length; i++) if (kind(v[i]) !== kind(r0) && !(kind(r0) === 'object' && kind(v[i]) === 'object')) throw new Error('schema: ' + p + '[' + i + ']'); }
   }
   const OPTIONAL_SECTIONS = ['monetization'];
-  const LATER_KEYS = { classifier: ['EQUIPMENT_HEAD', 'DISCUSSION', 'FOOD_SHOW', 'MATERIAL_NAMES', 'ARTS_CTX', 'MATERIAL_PRODUCT', 'ARTS_MATERIAL', 'MIXED_VENUE', 'MIXED_GOODS', 'CULTIVATED_MEAT', 'CULTIVATED_DISH', 'DAIRY_FREE', 'DAIRY_FOODS', 'PAREVE'] };
+  const LATER_KEYS = { classifier: ['EQUIPMENT_HEAD', 'DISCUSSION', 'FOOD_SHOW', 'MATERIAL_NAMES', 'ARTS_CTX', 'MATERIAL_PRODUCT', 'ARTS_MATERIAL', 'MIXED_VENUE', 'MIXED_GOODS', 'CULTIVATED_MEAT', 'CULTIVATED_DISH', 'DAIRY_FREE', 'DAIRY_FOODS', 'PAREVE', 'AMBIG_FOOD_CTX'] };
   // Affiliate tag: empty (inactive) or a plain Associates id; domains: bare hostnames; supportUrl: empty or https.
   function checkMonetization(m) {
     if (!m) return;

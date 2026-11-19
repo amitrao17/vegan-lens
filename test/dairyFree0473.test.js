@@ -16,9 +16,9 @@ const REBEL = {
   author: 'Rebel Cheese'
 };
 
-test('versions agree at 0.4.74', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.74');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.74');
+test('versions agree at 0.4.75', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.75');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.75');
 });
 
 test('dairy-free claims clear cheese, cheese board, butter, brie, cream and milk in the same unit', () => {
@@ -103,8 +103,9 @@ test('web.js passes post text into altBlur; blur labels pin top-left; images are
 test('hide-in CSS keeps carousel images rendered and blurred; labels sit top-left', () => {
   const css = R('web.css');
   // The old rule hid every non-chip child, which emptied Facebook carousel cells.
+  // 0.4.75 goes further: hide mode never uses display:none on any card content.
   assert.doesNotMatch(css, /\.vl-w-hide-in:has\(>\.vl-w-chip\)>:not\(\.vl-w-chip\)\{display:none/);
-  assert.match(css, /:not\(:has\(img,picture,video,\[role=img\],\[style\*=["']background-image["']\]\)\)\{display:none/);
+  assert.doesNotMatch(css, /\.vl-w-chip\+\.vl-w-hide\{display:none/);
   assert.match(css, /\.vl-w-hide-in:has\(>\.vl-w-chip\) img[\s\S]*?visibility:visible!important[\s\S]*?opacity:1!important[\s\S]*?filter:blur/);
   assert.match(css, /\.vl-img-blur[\s\S]*?visibility:visible!important[\s\S]*?opacity:1!important/);
   assert.match(css, /\.vl-blur-host>\.vl-blur-label\{position:absolute!important;top:6px;left:6px/);

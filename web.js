@@ -187,10 +187,12 @@
     // 0.4.74: a unit that is mostly a photo (Facebook letterboxed image, figure, image link) uses in-card hide-in
     // so the 0.4.73 rule keeps the picture rendered and blurred instead of display:none leaving a blank gray frame.
     const imageUnit = !!(el.matches && (el.matches('figure, picture, a:has(> img), [role=img]') || (el.querySelector && el.querySelector('img, picture, [role=img]') && String(el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().length < 80)));
-    const inCard = YT || PIN || UE || imageUnit; // Pinterest/Uber Eats: keep the chip inside the card
-    const dimCls = inCard ? 'vl-w-dim-in' : 'vl-w-dim', hideCls = inCard ? 'vl-w-hide-in' : 'vl-w-hide';
-    const label = say('hidden', 'Hidden: about ') + (r.topic || 'animal products');
     const mode = S.webMode;
+    // 0.4.75: hide mode is always in-card (chip pinned top-left, content stays in the layout and
+    // blurs). A sibling .vl-w-hide used to display:none the card and leave a blank gray carousel cell.
+    const inCard = YT || PIN || UE || imageUnit || mode === 'hide';
+    const dimCls = inCard ? 'vl-w-dim-in' : 'vl-w-dim', hideCls = 'vl-w-hide-in';
+    const label = say('hidden', 'Hidden: about ') + (r.topic || 'animal products');
     let c;
     const reveal = () => { try { chrome.runtime.sendMessage({ type: 'stat', k: 'reveal' }); } catch (e) {} el.classList.remove(...U.DIM_CLASSES); el.classList.add('vl-w-revealed'); unblurCard(el); c && c.remove(); };
     c = mode === 'label' ? chip(say('label', 'Non-vegan: ') + (r.topic || 'animal products')) : chip(label, reveal);
@@ -525,6 +527,63 @@
     e.preventDefault(); e.stopPropagation(); unblurImg(img);
   }, true);
 
+  // 0.4.75: recipe / news carousels keep off-screen slides in the DOM; a MutationObserver
+  // alone does not see a horizontal scroll. Watch overflow-x containers and observe
+  // pending cards so they are classified as they come into view.
+  const SCROLL_SEL = '[class*=carousel i], [class*=slider i], [class*=scroll i], [class*=swiper i], [class*=embla i], [role=list], [role=region], [data-carousel], [data-slider]';
+  function isHScroll(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const st = el.ownerDocument && el.ownerDocument.defaultView && el.ownerDocument.defaultView.getComputedStyle && el.ownerDocument.defaultView.getComputedStyle(el);
+      const ox = st ? st.overflowX : '';
+      const hinted = !!(el.className && /carousel|slider|swiper|embla/i.test(String(el.className)));
+      if (el.scrollWidth > el.clientWidth + 8) return !st || ox === 'auto' || ox === 'scroll' || ox === 'overlay' || ox === 'hidden' || hinted;
+      return hinted && (ox === 'auto' || ox === 'scroll' || ox === 'overlay' || ox === 'hidden');
+    } catch (e) { return false; }
+  }
+  function scrollerRoots(root) {
+    const scope = root && root.nodeType === 1 ? root : document;
+    const out = [], seenS = new Set();
+    try {
+      const cands = [...(scope.querySelectorAll ? scope.querySelectorAll(SCROLL_SEL) : [])];
+      if (scope.nodeType === 1) cands.unshift(scope);
+      (scope.querySelectorAll ? scope.querySelectorAll(UNIT_SEL) : []).forEach(u => { for (let p = u.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) cands.push(p); });
+      for (const el of cands) { if (!el || seenS.has(el)) continue; seenS.add(el); if (isHScroll(el)) out.push(el); }
+    } catch (e) {}
+    return out;
+  }
+  function scrollerCards(root) {
+    const out = new Set();
+    for (const r of scrollerRoots(root)) {
+      try {
+        r.querySelectorAll('a[href], [role=listitem], li, [class*=card i], [class*=slide i], [class*=item i]').forEach(a => {
+          if (!a.querySelector || !a.querySelector('img, picture, [role=img]')) return;
+          const txt = String(a.innerText || a.textContent || a.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
+          if (txt.length < 8) return;
+          const card = a.closest ? (a.closest('[class*=card i], [role=listitem], li, [class*=slide i], a[href]') || a) : a;
+          if (card && card !== document.body) out.add(card);
+        });
+      } catch (e) {}
+    }
+    return [...out];
+  }
+  const overflowWatched = typeof WeakSet === 'function' ? new WeakSet() : { has() { return false; }, add() {} };
+  function watchOverflow(root) {
+    for (const el of scrollerRoots(root)) {
+      if (overflowWatched.has(el) || !el.addEventListener) continue;
+      overflowWatched.add(el);
+      el.addEventListener('scroll', () => { requestIdle(() => { if (active()) scan(el); }); }, { passive: true });
+    }
+  }
+  const pendingIo = typeof IntersectionObserver === 'function' ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && active()) processUnit(e.target); }), { root: null, rootMargin: '300px', threshold: 0 }) : null;
+  function observePendingUnits(root) {
+    if (!pendingIo) return;
+    const scope = root && root.nodeType === 1 ? root : document;
+    let list = scrollerCards(scope);
+    try { list = list.concat(scope.matches && scope.matches(UNIT_SEL) ? [scope] : [], [...(scope.querySelectorAll ? scope.querySelectorAll(UNIT_SEL) : [])]); } catch (e) {}
+    for (const u of list) { if (u && u !== document.body && u !== document.documentElement && !seen.has(u)) pendingIo.observe(u); }
+  }
+
   function scan(root) {
     if (!active()) return;
     markPeople(root);
@@ -532,9 +591,13 @@
     scanAds(root);
     const units = [];
     if (/(^|\.)google\./.test(location.hostname)) for (const c of richCards(root.nodeType === 1 ? root : document)) { c.dataset.vlRich = '1'; units.push(c); }
+    // 0.4.75: horizontal carousel slides (Washington Post recipe rails, etc.)
+    for (const c of scrollerCards(root.nodeType === 1 ? root : document)) { c.dataset.vlRich = '1'; units.push(c); }
     if (root.nodeType === 1 && root.matches(UNIT_SEL)) units.push(root);
     try { units.push(...(root.querySelectorAll ? root.querySelectorAll(UNIT_SEL) : [])); } catch (e) { return; }
     for (const u of units) { processUnit(u); if (performance.now() - start > 40) { requestIdle(() => scan(root)); return; } } // yield on huge pages
+    watchOverflow(root);
+    observePendingUnits(root);
     blurImages(root.nodeType === 1 || root.nodeType === 9 ? root : document); // after cards: blur follows the card verdict (0.4.28)
     imageStats(root.nodeType === 1 || root.nodeType === 9 ? root : document); // 0.4.49 opt-in aggregate, after verdicts
     processPage();

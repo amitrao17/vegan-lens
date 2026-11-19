@@ -1,3 +1,11 @@
+## 0.4.75
+
+Washington Post Thanksgiving recipe carousel: hide mode no longer blanks cards, turkey-as-food is caught, and off-screen carousel slides are scanned.
+
+- Hide mode on the web never uses `display:none` on card content (the 0.4.73/0.4.74 hide-in path only covered short image units, so a longer recipe card collapsed to a blank gray box with a centered "Hidden: about meat" chip). Flagged cards now keep their layout, stay blurred, and pin the Vegan Lens label at the top-left — the same look as the pumpkin-pie card. Overflow is set to visible so the stuffing card's label is not clipped.
+- "Turkey" as food is non-vegan when a cut or dish word is present (thighs, breast, legs, wings, roast, braised, brined, smoked, gravy, and other recipe context). "Cider-Braised Turkey Thighs With Potatoes and Apples" is now flagged. Turkey the country, travel to Turkey, Turkish, "cold turkey" and "turkey vulture" stay unflagged.
+- Horizontal carousels: overflow-x containers get a scroll listener, and pending cards are observed with IntersectionObserver so off-screen slides are classified as they scroll into view.
+
 ## 0.4.74 — Facebook auto alt is a weak guess; vegan groups give their photos context
 - Facebook auto-generated alt text ("May be an image of steak") is a weak, unreliable guess. A lone auto-alt, with no corroborating text in the post, is not enough to dim or hide. Real, human-written alts and OCR in the same string ("text that says …") stay strong evidence.
 - Clear vegan context on the post means that guess is ignored: a group or page name with vegan, plant-based or plant-powered wording (e.g. Baltimore Vegans), post text about a vegan meal / restaurant / recipe, or a vegan author or brand. "Best steak in town?" in an ordinary group still dims, auto alt or not.

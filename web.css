@@ -1,6 +1,8 @@
 .vl-w-chip+.vl-w-dim{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) opacity(.4) blur(1.5px)!important;background-color:#8fd0a2!important;border-radius:6px;transition:filter .2s}
 .vl-w-chip+.vl-w-dim:hover{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) opacity(.6) blur(.5px)!important}
-.vl-w-chip+.vl-w-hide{display:none!important}
+/* 0.4.75: hide mode keeps card content in the layout (a removed card left carousel cells as a blank gray box). */
+.vl-w-chip+.vl-w-hide{position:relative!important;min-height:32px;overflow:visible!important}
+.vl-w-chip+.vl-w-hide,:is(.vl-w-hide,.vl-w-hide-in):has(>.vl-w-chip) img,:is(.vl-w-hide,.vl-w-hide-in):has(>.vl-w-chip) picture,:is(.vl-w-hide,.vl-w-hide-in):has(>.vl-w-chip) video,:is(.vl-w-hide,.vl-w-hide-in):has(>.vl-w-chip) [role=img],:is(.vl-w-hide,.vl-w-hide-in):has(>.vl-w-chip) [style*="background-image"]{visibility:visible!important;opacity:1!important}
 .vl-w-vegan{position:relative!important;overflow:visible!important}
 .vl-w-vegan::before{content:'';position:absolute;left:-10px;top:0;bottom:0;width:4px;border-radius:2px;background:#2e9d4a;pointer-events:none}
 .vl-w-chip{display:inline-flex!important;align-items:center;gap:2px;margin:2px 0!important;padding:2px 8px!important;border-radius:10px!important;background:#f1f3f4!important;color:#3c4043!important;border:1px solid #dadce0!important;font:12px/1.4 Arial,sans-serif!important;width:auto!important;max-width:100%!important;float:none!important}
@@ -23,12 +25,13 @@
 .vl-w-dim-in:has(>.vl-w-chip){position:relative!important;background-color:#8fd0a2!important;border-radius:6px}
 .vl-w-dim-in:has(>.vl-w-chip)>:not(.vl-w-chip){filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) opacity(.4) blur(1.5px)!important;transition:filter .2s}
 .vl-w-dim-in:has(>.vl-w-chip):hover>:not(.vl-w-chip){filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) opacity(.6) blur(.5px)!important}
-.vl-w-hide-in{position:relative!important;min-height:32px}
-/* 0.4.73: hide-in keeps photos rendered (blurred) so a carousel cell does not collapse to a blank gray box.
-   Text-only siblings still hide. Never use display:none / opacity:0 on the image itself. */
-.vl-w-hide-in:has(>.vl-w-chip)>:not(.vl-w-chip):not(img):not(picture):not(video):not([role=img]):not(:has(img,picture,video,[role=img],[style*="background-image"])){display:none!important}
-.vl-w-hide-in:has(>.vl-w-chip) img,.vl-w-hide-in:has(>.vl-w-chip) picture,.vl-w-hide-in:has(>.vl-w-chip) video,.vl-w-hide-in:has(>.vl-w-chip) [role=img],.vl-w-hide-in:has(>.vl-w-chip) [style*="background-image"]{visibility:visible!important;opacity:1!important;filter:blur(14px) grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) brightness(1.15)!important}
-.vl-w-chip.vl-w-chip-in{position:absolute!important;top:6px;left:6px;z-index:10!important;filter:none!important;display:inline-flex!important;visibility:visible!important;opacity:1!important;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.vl-w-hide-in,.vl-w-hide{position:relative!important;min-height:32px;overflow:visible!important}
+/* 0.4.75: hide mode keeps every card's layout and blurs its contents. The label is pinned
+   top-left. 0.4.73 already did this for photos in hide-in units; earlier sibling-hide
+   of the card itself left a blank gray carousel cell. */
+.vl-w-hide-in:has(>.vl-w-chip)>:not(.vl-w-chip),.vl-w-hide:has(>.vl-w-chip)>:not(.vl-w-chip),.vl-w-chip+.vl-w-hide{filter:blur(14px) grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) brightness(1.15)!important;visibility:visible!important;opacity:1!important}
+.vl-w-hide-in:has(>.vl-w-chip) img,.vl-w-hide-in:has(>.vl-w-chip) picture,.vl-w-hide-in:has(>.vl-w-chip) video,.vl-w-hide-in:has(>.vl-w-chip) [role=img],.vl-w-hide-in:has(>.vl-w-chip) [style*="background-image"],.vl-w-hide:has(>.vl-w-chip) img,.vl-w-hide:has(>.vl-w-chip) picture,.vl-w-hide:has(>.vl-w-chip) video,.vl-w-hide:has(>.vl-w-chip) [role=img],.vl-w-hide:has(>.vl-w-chip) [style*="background-image"],.vl-w-chip+.vl-w-hide img,.vl-w-chip+.vl-w-hide picture,.vl-w-chip+.vl-w-hide video,.vl-w-chip+.vl-w-hide [role=img],.vl-w-chip+.vl-w-hide [style*="background-image"]{visibility:visible!important;opacity:1!important;filter:blur(14px) grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.5) brightness(1.15)!important}
+.vl-w-chip.vl-w-chip-in{position:absolute!important;top:6px;left:6px;z-index:12!important;filter:none!important;display:inline-flex!important;visibility:visible!important;opacity:1!important;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 /* invariant 1 (CSS side): tint/blur only renders when the element has its own chip (child for -in, previous sibling otherwise) */
 
 /* public-figure pills (people.js): inline, tiny, never affects surrounding layout order */

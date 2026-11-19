@@ -3,7 +3,7 @@
   'use strict';
   // 0.4.52: rule data comes from rules/rules.json (see rules/rules.js); applyRules() re-runs when a signed list update lands.
   const Rules = (typeof module !== 'undefined' && module.exports) ? require('./rules/rules.js') : root.VeganRules;
-  let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH, DAIRY_FREE, DAIRY_FOODS, PAREVE;
+  let ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH, DAIRY_FREE, DAIRY_FOODS, PAREVE, AMBIG_FOOD_CTX;
   let PLANT_WORD, ANIMAL_RX, VEGAN_RX, ANIMAL_ALT, NEGATED, RENOUNCE;
   // [regex source, weight, label]
   // Plants that are commonly cut and cooked as "steaks" (0.4.12: kohlrabi, celery, king oyster, beet, zucchini, ...).
@@ -160,7 +160,11 @@
     let verdict = 'neutral';
     // requireHeadline (YouTube): hidden/secondary text alone (description, alt) can't make a card non-vegan.
     if (opts.requireHeadline && !headNeg) neg = 0;
-    const headStrong = opts.sensitivity !== 'low' && matches.some(m => (m.where === 'title' || m.where === 'tag') && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:(?:grass|butter|goat|sheep|cow|skim|whole)?milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && !/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
+    // 0.4.75: "turkey" (and duck/ham/cod…) is a weak title term because it can be a country or idiom,
+    // so a bare "Turkey" does not hide. A cut, dish or recipe word in the same title ("turkey thighs",
+    // "braised turkey", "turkey gravy") is food, and the term is then as strong as "chicken".
+    const foodCtx = !!(AMBIG_FOOD_CTX && (AMBIG_FOOD_CTX.lastIndex = 0, AMBIG_FOOD_CTX.test(headText || String(parts.headline || ''))));
+    const headStrong = opts.sensitivity !== 'low' && matches.some(m => (m.where === 'title' || m.where === 'tag') && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:(?:grass|butter|goat|sheep|cow|skim|whole)?milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && (!/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) || foodCtx) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
     const strongHead = matches.some(m => m.where === 'title' && STRONG_PAGE.test(m.label));
     if (opts.communityVegan) {
       // 0.4.74: a vegan group/author never hides a post, but "tried real steak again" is not a vegan verdict.
@@ -283,7 +287,7 @@
     return classify(t.slice(0, 1500), opts || {}).verdict === 'vegan';
   }
   function applyRules(D) {
-    ({ ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH, DAIRY_FREE, DAIRY_FOODS, PAREVE } = D.classifier);
+    ({ ANIMAL, BOOST, VEGAN, ETHICS, PLANT_STEAK, MEAT_REJECT, STRONG_PAGE, FALSE_FRIENDS, COLOR_COSMETIC, HONEY_SHADE, THRESH, WEAR_CTX, BARE_LEATHER, PLANT_LEATHER, AMBIG, PLANT_UNIT, EXPLICIT_MEAT, STYLE_MATERIALS, CAUTION_WEB, HEADER_VEGAN, UNIT_VEGAN, EQUIPMENT_HEAD, DISCUSSION, FOOD_SHOW, MATERIAL_NAMES, ARTS_CTX, MATERIAL_PRODUCT, ARTS_MATERIAL, MIXED_VENUE, MIXED_GOODS, CULTIVATED_MEAT, CULTIVATED_DISH, DAIRY_FREE, DAIRY_FOODS, PAREVE, AMBIG_FOOD_CTX } = D.classifier);
     PLANT_WORD = new RegExp('\\b(?:' + PLANT_STEAK + '|vegan|plant|vegetables?|veg|lentils?|chickpeas?|beans?|tofu|garden)\\b');
     ANIMAL_RX = ANIMAL.map(([s, w, l]) => [rx(s), w, l]);
     VEGAN_RX = VEGAN.map(([s, w, l]) => [rx(s), w, l]);
