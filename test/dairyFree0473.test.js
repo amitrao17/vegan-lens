@@ -16,9 +16,9 @@ const REBEL = {
   author: 'Rebel Cheese'
 };
 
-test('versions agree at 0.4.73', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.73');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.73');
+test('versions agree at 0.4.74', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.74');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.74');
 });
 
 test('dairy-free claims clear cheese, cheese board, butter, brie, cream and milk in the same unit', () => {

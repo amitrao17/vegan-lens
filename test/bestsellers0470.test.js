@@ -8,9 +8,9 @@ const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const fx = parse(R('test/fixtures/amazon-bestsellers.html'));
 const cards = fx.querySelectorAll("[id^='p13n-asin-index-']");
 
-test('versions agree at 0.4.73', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.73');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.73');
+test('versions agree at 0.4.74', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.74');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.74');
 });
 
 test('bestsellers fixture has three p13n cards (vegan, suede, generic)', () => {

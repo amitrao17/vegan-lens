@@ -184,7 +184,7 @@
     let best = '';
     const links = el.tagName === 'A' ? [el, ...el.querySelectorAll('a[href]')] : [...el.querySelectorAll('a[href]')];
     for (const a of links) for (const t of [a.getAttribute('aria-label'), a.getAttribute('title'), a.innerText != null ? a.innerText : a.textContent]) { const c = clean(t); if (c.length > best.length && c.length <= 200) best = c; }
-    if (best.length < 8) { const i = el.querySelector('img[alt]'); const c = clean(i && i.getAttribute('alt')); if (c.length > best.length) best = c.slice(0, 200); }
+    if (best.length < 8) { const i = el.querySelector('img[alt]'); const c = clean(i && i.getAttribute('alt')); if (c.length > best.length && !(FB_AUTO_ALT.test(c) && !altSays(c))) best = c.slice(0, 200); }
     return best;
   }
   // Category / tag chips: Yelp category links (cflt= / find_desc=), [class*=categor] and [class*=tag] text. Short words only.
@@ -259,15 +259,38 @@
   // 0.4.39: social post author/page name from the post header (Facebook etc.): the first short heading/strong/link text
   // in the unit. Structural selectors only, no generated class names.
   const isFacebookHost = h => /(^|\.)facebook\.com$/.test(String(h || ''));
+  // 0.4.74: Facebook group name from the header link above the author (href contains /groups/).
+  function postGroup(el) {
+    if (!el || !el.querySelectorAll) return '';
+    for (const a of [...el.querySelectorAll('a[href*="/groups/"]')].slice(0, 12)) {
+      const href = (a.getAttribute && a.getAttribute('href')) || '';
+      if (!/\/groups\//i.test(href)) continue; // require a real groups URL (querySelectorAll mocks may ignore the selector)
+      if (/\/groups\/\d+\/(?:posts|permalink|comments|reel)\b/i.test(href)) continue;
+      const t = String(a.innerText != null ? a.innerText : a.textContent || '').split('\n')[0].replace(/\s+/g, ' ').trim();
+      if (t.length >= 2 && t.length <= 80 && !/^(?:join|joined|see all|members?|invite|share|like|comment|sponsored|suggested for you)$/i.test(t)) return t;
+    }
+    return '';
+  }
   function postAuthor(el) {
     if (!el || !el.querySelectorAll) return '';
     const al = el.getAttribute && el.getAttribute('aria-labelledby'); // FB articles point at their header
+    const group = postGroup(el);
     const cands = [...el.querySelectorAll('h2, h3, h4, [role=heading], strong, a[role=link] > span, a[href] > strong, a[href] > span > strong')].slice(0, 8);
     for (const c of cands) {
       const t = String(c.innerText || c.textContent || '').split('\n')[0].replace(/\s+/g, ' ').trim();
+      if (group && t === group) continue; // 0.4.74: the group header is community context, not the byline
       if (t.length >= 2 && t.length <= 80 && !/^(?:sponsored|suggested for you|follow|join|see more|like|comment|share)$/i.test(t)) return t;
     }
     return '';
+  }
+  // 0.4.74: Facebook's auto alt ("May be an image of steak") is a weak guess. OCR in the same alt ("text that says ...") is real text.
+  const FB_AUTO_ALT = /^(?:may be an? )?(?:image|photo|picture) of(?: (?:a|an|some))?\s+/i;
+  function fbAutoAlt(t) {
+    const raw = String(t || '').replace(/\s+/g, ' ').trim();
+    const ocr = altSays(raw);
+    if (!FB_AUTO_ALT.test(raw)) return { auto: false, guess: '', ocr };
+    const guess = raw.replace(FB_AUTO_ALT, '').replace(/\s+and text that says[\s\S]*$/i, '').trim();
+    return { auto: true, guess, ocr };
   }
   // 0.4.40: extra Facebook post text the visible innerText misses: text inside images (FB auto alt 'May be an image of ...
   // and text that says "..."'), image aria-labels, link-preview headline/domain, and collapsed 'See more' text already in the DOM
@@ -286,8 +309,18 @@
       const h = a.getAttribute('href') || '';
       if (/^https?:\/\/(?:l\.|lm\.)?facebook\.com\/l\.php|^https?:\/\/(?!(?:[\w-]+\.)?facebook\.com)/i.test(h)) { const t = String(a.textContent || '').replace(/\s+/g, ' ').trim(); if (t) link.push(t.slice(0, 200)); }
     }
-    const msg = [...el.querySelectorAll('[data-ad-preview=message], [data-ad-comet-preview=message], [data-ad-rendering-role=story_message]')].map(m => String(m.textContent || '').replace(/\s+/g, ' ').trim()).join(' ');
-    return { snippet: [msg, ...said, ...link].filter(Boolean).join(' . ').slice(0, 900), alt: alts.join(' . ').slice(0, 300) };
+    const official = [...el.querySelectorAll('[data-ad-preview=message], [data-ad-comet-preview=message], [data-ad-rendering-role=story_message]')].map(m => String(m.textContent || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+    let msg = official.join(' ');
+    if (!msg) {
+      // Organic posts often put the body in dir=auto blocks, not <p>. Prefer the first substantial block (usually above the photo; comments come later).
+      for (const m of [...el.querySelectorAll('div[dir=auto], span[dir=auto]')].slice(0, 20)) {
+        if (m.closest && m.closest('h1, h2, h3, h4, [role=heading], button, [role=button], form, nav')) continue;
+        if (m.querySelector && m.querySelector('img, video')) continue;
+        const t = String((m.innerText != null ? m.innerText : m.textContent) || '').replace(/\s+/g, ' ').trim();
+        if (t.length >= 20 && t.length <= 2000 && !/^(?:like|comment|share|see more|log in|see translation|all reactions)\b/i.test(t)) { msg = t; break; }
+      }
+    }
+    return { snippet: [msg, ...said, ...link].filter(Boolean).join(' . ').slice(0, 1400), alt: alts.join(' . ').slice(0, 300) };
   }
   // 0.4.46: the nearest content unit for an image: an open email body (Gmail div.a3s / message list item), article or post;
   // otherwise the closest ancestor holding a real amount of text. Never the whole page/body.
@@ -323,7 +356,7 @@
     return n;
   }
   const unitText = el => el ? (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 6000) : '';
-  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, isFacebookHost, postAuthor, YT_CARD, isYouTubeHost, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage };
+  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganWebUnits = api;
 })(typeof self !== 'undefined' ? self : this);

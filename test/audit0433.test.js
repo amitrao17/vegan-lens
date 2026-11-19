@@ -52,7 +52,7 @@ test('(4) alt blur: audit images in non-dimmed units stay sharp', () => {
   assert.equal(W.altBlur('smoked brisket sliced on a cutting board', {}, true).blur, true);
   assert.equal(W.altBlur('teriyaki chicken', {}, false).blur, true);
   assert.equal(W.altBlur('teriyaki chicken', {}, true).blur, false);
-  assert.match(R('web.js'), /C\.altBlur\(t, S, undimmed, postCtx\)/);
+  assert.match(R('web.js'), /C\.altBlur\(t, S, undimmed, ctxParts\)/);
 });
 test('(5) probably banner: details in tooltip, one line', () => {
   const s = R('content.js');

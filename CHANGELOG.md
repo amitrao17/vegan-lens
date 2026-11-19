@@ -1,3 +1,11 @@
+## 0.4.74 — Facebook auto alt is a weak guess; vegan groups give their photos context
+- Facebook auto-generated alt text ("May be an image of steak") is a weak, unreliable guess. A lone auto-alt, with no corroborating text in the post, is not enough to dim or hide. Real, human-written alts and OCR in the same string ("text that says …") stay strong evidence.
+- Clear vegan context on the post means that guess is ignored: a group or page name with vegan, plant-based or plant-powered wording (e.g. Baltimore Vegans), post text about a vegan meal / restaurant / recipe, or a vegan author or brand. "Best steak in town?" in an ordinary group still dims, auto alt or not.
+- A vegan-group post whose own text is about eating meat ("tried real steak again") is labelled as discussion — visible, not called vegan, not hidden.
+- Facebook group names are read from the header link above the author (`/groups/…`) and passed as community context. The post body is also read from `dir=auto` story blocks, not only `<p>` tags, so "vegan meal" in the write-up reaches the classifier.
+- Photo-only units (a letterboxed Facebook image, a figure, an image link) use in-card hide-in, so the 0.4.73 rule keeps the picture rendered and blurred with a top-left label instead of `display:none` leaving a blank gray frame.
+- Fix: a Baltimore Vegans post asking for a vegan restaurant, whose photo Facebook tagged "May be an image of steak," was hidden "about steak."
+
 ## 0.4.73 — Dairy-free posts stay visible; carousel images stay blurred, not blank
 - Dairy-free wording in the same post or ad — "zero dairy", "dairy-free", "non-dairy", "100% dairy-free", "made from cashews/nuts/oats" — now clears cheese, cheese board, butter, brie, cream and milk words in that unit. "Dairy" inside those claims is no longer scored as dairy. Lactose-free milk is unchanged (still dairy).
 - Kosher Pareve is supporting evidence that a cheese/butter/milk mention is not dairy, but it is not vegan on its own (pareve can include eggs or fish). A pareve smoked salmon still dims.

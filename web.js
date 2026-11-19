@@ -76,7 +76,16 @@
     const alt = [...el.querySelectorAll('img[alt]')].slice(0, 2).map(i => i.alt).join(' ').slice(0, 200);
     if (PIN) { const pp = U.pinParts(el); return { ...pp, creators: creators(el) }; } // 0.4.60
     if (UE) return U.ueParts(el); // 0.4.66: name + description / cuisine tags only (no image-alt guessing)
-    if (U.isFacebookHost(location.hostname)) { const x = U.fbExtraText(el); return { headline, tags, snippet: [snippet, x.snippet].filter(Boolean).join(' . ').slice(0, 1400), alt: [alt, x.alt].filter(Boolean).join(' . ').slice(0, 400), community: community(el), author: U.postAuthor(el) }; }
+    if (U.isFacebookHost(location.hostname)) {
+      const x = U.fbExtraText(el);
+      const group = U.postGroup ? U.postGroup(el) : '';
+      const author = U.postAuthor(el);
+      const body = x.snippet || '';
+      // Heading is often just the group or author; the post lives in the story body (dir=auto, not <p>).
+      if (body && (headline.length < 8 || headline === group || headline === author)) { snippet = [snippet, body].filter(Boolean).join(' . ').slice(0, 1400); headline = body.slice(0, 300); }
+      else snippet = [snippet, body].filter(Boolean).join(' . ').slice(0, 1400);
+      return { headline, tags, snippet, alt: [alt, x.alt].filter(Boolean).join(' . ').slice(0, 400), community: group || community(el), author };
+    }
     return { headline, tags, snippet, alt, community: community(el), author: '', creators: creators(el) };
   }
   // 0.4.59: channel / creator / byline names in the unit; the classifier strips them (a name is not food evidence).
@@ -91,6 +100,7 @@
   function community(el) {
     const a = el.getAttribute && (el.getAttribute('subreddit-prefixed-name') || el.getAttribute('subreddit-name') || el.getAttribute('data-subreddit') || el.getAttribute('data-subreddit-prefixed') || el.getAttribute('data-community'));
     if (a) return a;
+    if (U.isFacebookHost(location.hostname) && U.postGroup) { const g = U.postGroup(el); if (g) return g; }
     const l = el.querySelector && el.querySelector('a[href*="/r/"][data-testid=subreddit-name], a[data-click-id=subreddit], a.subreddit, a[href^="/r/"], a[href*="/c/"]');
     const m = String((l && (l.textContent || l.getAttribute('href'))) || '').match(/\b[rc]\/([A-Za-z0-9_]+)/) || String(el.textContent || '').slice(0, 400).match(/\b[rc]\/([A-Za-z0-9_]+)/);
     return m ? m[0] : '';
@@ -174,7 +184,10 @@
     if (r.verdict !== 'nonvegan') { cautionPill(el); return; }
     // YouTube: dim/hide the card's contents but keep the chip inside the card (a sibling chip lands in the grid's flex/grid
     // flow, is clipped or re-rendered away by YouTube, and the filter on the card would blur the chip too).
-    const inCard = YT || PIN || UE; // Pinterest/Uber Eats: keep the chip inside the card
+    // 0.4.74: a unit that is mostly a photo (Facebook letterboxed image, figure, image link) uses in-card hide-in
+    // so the 0.4.73 rule keeps the picture rendered and blurred instead of display:none leaving a blank gray frame.
+    const imageUnit = !!(el.matches && (el.matches('figure, picture, a:has(> img), [role=img]') || (el.querySelector && el.querySelector('img, picture, [role=img]') && String(el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().length < 80)));
+    const inCard = YT || PIN || UE || imageUnit; // Pinterest/Uber Eats: keep the chip inside the card
     const dimCls = inCard ? 'vl-w-dim-in' : 'vl-w-dim', hideCls = inCard ? 'vl-w-hide-in' : 'vl-w-hide';
     const label = say('hidden', 'Hidden: about ') + (r.topic || 'animal products');
     const mode = S.webMode;
@@ -486,7 +499,8 @@
       // 0.4.73: classify the image with the post/ad unit's own text, so dairy-free copy clears a cheese-board alt.
       const ctxUnit = (owner && owner.dataset && owner.dataset.vlW !== 'container' && owner) || (img.closest && img.closest('[data-vl-w]:not([data-vl-w=container]), article, [role=article]'));
       const postCtx = (ctxUnit && ((U.unitText && U.unitText(ctxUnit)) || ctxUnit.innerText || ctxUnit.textContent || '')) || '';
-      const ab = C.altBlur ? C.altBlur(t, S, undimmed, postCtx) : { blur: C.classify(postCtx ? { headline: postCtx, alt: t } : t, S).verdict === 'nonvegan', r: null };
+      const ctxParts = (ctxUnit && U.isFacebookHost(location.hostname)) ? { headline: postCtx, author: U.postAuthor(ctxUnit), community: community(ctxUnit) } : postCtx;
+      const ab = C.altBlur ? C.altBlur(t, S, undimmed, ctxParts) : { blur: C.classify(postCtx ? { headline: postCtx, alt: t } : t, S).verdict === 'nonvegan', r: null };
       if (!ab.blur) { if (ab.r && ab.r.verdict === 'nonvegan') dbg('img:skip-' + ab.why, img, ab.r); continue; }
       const r = ab.r;
       if (inVeganUnit(img)) { dbg('img:skip-vegan-unit', img, r); continue; } // 0.4.46 email/article is vegan overall
@@ -496,7 +510,7 @@
       const card = unit || img.closest('a[href], article, li, figure, [class*=card i]');
       if (card && card !== document.body) {
         const ct = (card.innerText || card.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-        const cr = ct.length >= 8 ? C.classify({ headline: ct, alt: t, author: U.isFacebookHost(location.hostname) ? U.postAuthor(card) : '' }, S) : null;
+        const cr = ct.length >= 8 ? C.classify({ headline: ct, alt: t, author: U.isFacebookHost(location.hostname) ? U.postAuthor(card) : '', community: U.isFacebookHost(location.hostname) ? community(card) : '' }, S) : null;
         if (cr && cr.verdict === 'vegan') { dbg('img:skip-vegan-card', img, cr); continue; }
         if (!unit && cr && cr.verdict === 'nonvegan' && ct.length < 400 && card.querySelectorAll('img').length <= 3 && !skippable(card)) processUnit(card);
       }

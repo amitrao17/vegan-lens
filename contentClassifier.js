@@ -28,6 +28,17 @@
     const n = raw.replace(/[^a-z0-9]/g, '');
     return /vegan|plantbased|plantpowered|wfpb/.test(n);
   }
+  // 0.4.74: Facebook auto-generated alt ('May be an image of steak') is a weak guess; OCR in the same string is real text.
+  const FB_AUTO_ALT = /^(?:may be an? )?(?:image|photo|picture) of(?: (?:a|an|some))?\s+/i;
+  const FB_AUTO_OCR = /text that says ['"\u201c\u2018](.+?)['"\u201d\u2019]?\s*$/i;
+  function fbAutoAlt(t) {
+    const raw = String(t || '').replace(/\s+/g, ' ').trim();
+    const ocr = ((raw.match(FB_AUTO_OCR) || [])[1] || '').trim();
+    if (!FB_AUTO_ALT.test(raw)) return { auto: false, guess: '', ocr };
+    const guess = raw.replace(FB_AUTO_ALT, '').replace(/\s+and text that says[\s\S]*$/i, '').trim();
+    return { auto: true, guess, ocr };
+  }
+  const VEGAN_FOOD_CTX = /\bvegan(?:[- ](?:meal|meals|restaurant|restaurants|recipe|recipes|food|option|options|diet|dishes|dish))?s?\b/i;
   // 0.4.39: ambiguous foods (burger, sausage, nuggets, patty, meatballs, hot dogs, "meat") are commonly plant-based. When the same
   // unit (title + snippet + alt) names a plant protein or vegan word anywhere, they are not scored as animal. Explicit meats
   // (beef, bacon, pork, chicken, steak...) still score.
@@ -57,6 +68,7 @@
     // Kosher Pareve supports "not dairy" but is not vegan on its own (pareve can include eggs or fish).
     const dairyFreeUnit = !!(DAIRY_FREE && (DAIRY_FREE.lastIndex = 0, DAIRY_FREE.test(unitText)));
     const pareveUnit = !!(PAREVE && PAREVE.test(unitText));
+    const veganFoodCtx = !!(VEGAN_FOOD_CTX && VEGAN_FOOD_CTX.test([parts.headline, parts.snippet].filter(Boolean).join(' ')));
     const wearCtx = WEAR_CTX.test(unitText);
     // 0.4.64: fur/leather need positive material evidence. In a music/arts/game unit with no product/fashion context,
     // bare 'fur'/'leather'/'suede' tokens are not evidence (e.g. 'Fur Elise ... Ukulele TAB').
@@ -74,6 +86,16 @@
       const pk = Brands && Brands.pick && Brands.pick(rawText);
       if (pk) { pos += 3 * segW; reasons.push('+vegan pick: ' + pk.brand + ' ' + pk.line); t = t.replace(/\b(?:mayo(?:nnaise)?|ice cream|dairy|milk|cream)\b/g, ' _ '); }
       t = shadeNeutralize(t, opts.beauty);
+      // 0.4.74: Facebook auto alt is not evidence on its own. In vegan context (group/author/vegan-food wording) it is
+      // dropped entirely. OCR in the same alt ('text that says ...') is kept. A lone auto-guess never hides a post.
+      const autoAlt = fbAutoAlt(rawText);
+      if (autoAlt.auto && (where === 'alt' || where === 'title')) {
+        const veganCtx = opts.communityVegan || veganFoodCtx || (Brands && Brands.match([parts.headline, parts.snippet, parts.author, parts.community].filter(Boolean).join('\n'), opts).length);
+        if (autoAlt.ocr) t = ' ' + autoAlt.ocr.toLowerCase().replace(/[\u2018\u2019]/g, "'") + ' ';
+        else if (veganCtx || where === 'alt') t = ' _ ';
+        // title that is only an auto-guess (no OCR, no vegan context): also drop it so it cannot act as a headline steak.
+        else t = ' _ ';
+      }
       // 0.4.73: neutralize dairy-free claims first so "dairy" inside "dairy-free" / "non-dairy" / "zero dairy" never scores,
       // and (when the unit has such a claim) cheese, cheese board, butter, brie, cream and milk are cleared too.
       if (DAIRY_FREE) {
@@ -140,7 +162,12 @@
     if (opts.requireHeadline && !headNeg) neg = 0;
     const headStrong = opts.sensitivity !== 'low' && matches.some(m => (m.where === 'title' || m.where === 'tag') && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:(?:grass|butter|goat|sheep|cow|skim|whole)?milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && !/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
     const strongHead = matches.some(m => m.where === 'title' && STRONG_PAGE.test(m.label));
-    if (opts.communityVegan) verdict = 'vegan'; // vegan community: never dim
+    if (opts.communityVegan) {
+      // 0.4.74: a vegan group/author never hides a post, but "tried real steak again" is not a vegan verdict.
+      const headMeat = matches.some(m => m.where === 'title' && (EXPLICIT_MEAT ? EXPLICIT_MEAT.test(m.term) : /steak|beef|pork|bacon|chicken|fish|salmon/i.test(m.term + ' ' + m.label)));
+      if (headNeg && headMeat && !veganHits) { verdict = 'discussion'; reasons.push('meat mention in a vegan community'); }
+      else verdict = 'vegan'; // vegan community: never dim
+    }
     else if (opts.pageVegan) { if (pos >= 3) verdict = 'vegan'; } // vegan page/channel: never dim; meaty words there mean plant versions
     else if ((neg >= thr || (headStrong && !rejects)) && neg > pos) verdict = 'nonvegan';
     else if (pos >= 3 && pos > neg) verdict = 'vegan';
@@ -177,6 +204,10 @@
     }
     if (veganCreator && !cultivatedDish && (verdict === 'nonvegan' || verdict === 'vegan') && onlyGenericMeat && !clearRecipe && !meatyDish) {
       verdict = 'discussion'; reasons.push('generic meat on a vegan-named channel');
+    }
+    // 0.4.74 safety net: the only animal evidence was a Facebook auto-alt guess → never hide (soft/neutral).
+    if (verdict === 'nonvegan' && matches.length && matches.every(m => m.autoAlt)) {
+      verdict = 'neutral'; reasons.push('weak Facebook auto alt');
     }
     const topic = Object.entries(about).sort((a, b) => b[1] - a[1])[0];
     return { verdict, score, reasons: [...new Set(reasons)], topic: topic ? topic[0] : null, about, matches, ...(mixed ? { mixed: true } : {}), ...(cultivated && verdict === 'discussion' ? { cultivated: true } : {}) };
@@ -225,11 +256,19 @@
   const ALT_HIGH = -3;
   const cleanAlt = t => String(t || '').replace(/^\s*(?:r|u)\/[\w-]+\s*[-\u2013\u2014:|]\s*/i, '').replace(/^(?:may be an? )?(?:image|photo|picture) of /i, '');
   function altBlur(alt, opts, inUndimmedUnit, context) {
-    const t = cleanAlt(alt); if (t.length < 3) return { blur: false, r: null, why: 'short' };
+    const raw = String(alt || '').trim();
+    const t = cleanAlt(raw); if (t.length < 3) return { blur: false, r: null, why: 'short' };
     // 0.4.73: image-level blur inside a post/ad must also apply the post's own text (dairy-free copy, brand, etc.).
-    const ctx = String(context || '').replace(/\s+/g, ' ').trim();
-    const r = classify(ctx.length >= 8 ? { headline: ctx.slice(0, 1500), alt: t } : t, opts || {});
-    if (r.verdict !== 'nonvegan') return { blur: false, r, why: 'not-nonvegan' };
+    // 0.4.74: a lone Facebook auto-alt guess is not enough to blur; pass it as alt (not as a title) so it stays weak.
+    const ctxObj = context && typeof context === 'object' && (context.headline || context.snippet || context.community || context.author)
+      ? { headline: context.headline, snippet: context.snippet, author: context.author, community: context.community }
+      : null;
+    const ctx = ctxObj ? String(ctxObj.headline || ctxObj.snippet || '').replace(/\s+/g, ' ').trim() : String(context || '').replace(/\s+/g, ' ').trim();
+    const auto = fbAutoAlt(raw);
+    const input = ctxObj ? { ...ctxObj, alt: raw } : (ctx.length >= 8 ? { headline: ctx.slice(0, 1500), alt: raw } : (auto.auto ? { alt: raw } : t));
+    const r = classify(input, opts || {});
+    if (r.verdict !== 'nonvegan') return { blur: false, r, why: auto.auto && !auto.ocr ? 'weak-auto-alt' : 'not-nonvegan' };
+    if (auto.auto && !auto.ocr && (r.matches || []).every(m => m.where === 'alt')) return { blur: false, r, why: 'weak-auto-alt' };
     if (inUndimmedUnit && r.score > ALT_HIGH) return { blur: false, r, why: 'low-confidence-in-undimmed-unit' };
     return { blur: true, r, why: inUndimmedUnit ? 'high-confidence' : 'alt' };
   }
@@ -256,7 +295,7 @@
     try { Object.assign(api, { CAUTION_WEB, STYLE_MATERIALS, HEADER_VEGAN, THRESH }); } catch (e) { /* first run: api not built yet */ }
   }
   applyRules(Rules.data()); Rules.onChange(applyRules);
-  const api = { stripPeople, unitVegan, altBlur, cleanAlt, ALT_HIGH, classify, shopCaution, CAUTION_WEB, STYLE_MATERIALS, communityVegan, pageContext, fabricQuery, HEADER_VEGAN, THRESH, LABEL_W };
+  const api = { stripPeople, unitVegan, altBlur, cleanAlt, fbAutoAlt, ALT_HIGH, classify, shopCaution, CAUTION_WEB, STYLE_MATERIALS, communityVegan, pageContext, fabricQuery, HEADER_VEGAN, THRESH, LABEL_W };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganContentClassifier = api;
 })(typeof self !== 'undefined' ? self : this);
