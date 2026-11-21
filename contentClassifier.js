@@ -122,7 +122,7 @@
       }
       t = t.replace(PLANT_LEATHER, () => { veganHits += 1; return ' _ '; });
       if (plantUnit) t = t.replace(AMBIG, m => (EXPLICIT_MEAT.test(m) ? m : (veganHits += 0.34, ' _ ')));
-      for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += (PLANT_STEAK && new RegExp(PLANT_STEAK, 'i').test(m)) || /vegan|plant|garden|oat|soy|almond|coconut|faux|pleather/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
+      for (const ff of FALSE_FRIENDS) { if (ff.test(t)) { ff.lastIndex = 0; t = t.replace(ff, m => { veganHits += (PLANT_STEAK && new RegExp('\\b(?:' + PLANT_STEAK + ')\\b', 'i').test(m)) || /\b(?:vegan|plant|garden|oat|soy|almond|coconut|faux|pleather)\b/.test(m) ? 1 : 0; return ' _ '; }); } ff.lastIndex = 0; }
       // 0.4.62 noun-head rule: an animal word modifying equipment/supplies ('poultry fencing', 'chicken wire', 'fish tank filter',
       // 'cattle panel', 'pig ear tag') is not evidence; the head noun is the thing sold. Food heads (breast, fillets...) are excluded.
       if (MATERIAL_NAMES) t = t.replace(MATERIAL_NAMES, ' _ '); // 0.4.64: 'Für Elise', 'Fur Affinity', German 'für'
@@ -202,8 +202,20 @@
     const clearRecipe = /\b(?:recipes?|how to (?:cook|grill|smoke|make|fry|bake)|grilled|smoked|baked|fried|homemade|mukbang|cook-?off)\b/i.test(head);
     const meatyDish = /\bmeat[- ]lovers?\b/i.test(head);
     const onlyGenericMeat = matches.length && matches.every(m => m.label === 'meat');
+    // 0.4.76: a vegan/plant-based word used contrastively ("vegan vs beef", "I'm vegan but ate beef")
+    // or as a person/role who then makes/tries meat ("Vegan Chef Makes Roast Beef") is not a product
+    // modifier. Leftover animal evidence must not get a vegan verdict.
+    const VEGAN_CONTRAST = /\b(?:vegan|plant[- ]based|veggie|meatless)\b(?:\s+\w+){0,4}\s+(?:vs\.?|versus)\b|\b(?:vegan|plant[- ]based|veggie|meatless)\b(?:\s+\w+){0,4}\s+but\s+(?:i\s+|we\s+|they\s+|he\s+|she\s+)?(?:ate|eaten|eat|eating|tried|tries|try|tasted|had)\b/i;
+    const VEGAN_ROLE_VERB = /\b(?:vegan|plant[- ]based|veggie|meatless)\b(?:\s+\w+){0,3}\s+(?:makes?|made|making|tries?|tried|trying|tastes?|tasting)\s+(?:an? |the |some |real )?(?:(?:roast|deli|smoked|grilled|fried|baked|pulled|ground|sliced)\s+){0,2}(?:steaks?|burgers?|bacon|ribs|chicken|turkey|duck|meats?|fish|tuna|salmon|beef|pork|ham|lamb|veal|shrimp|seafood|jerky|nuggets?|hot dogs?|sausages?)\b/i;
+    if (verdict === 'vegan' && matches.length && (VEGAN_CONTRAST.test(head) || VEGAN_ROLE_VERB.test(head))) {
+      verdict = /\b(?:vs\.?|versus)\b/i.test(head) ? 'discussion' : 'nonvegan';
+      reasons.push('vegan word used contrastively');
+    }
+    const titlePlantMod = /\b(?:vegan|plant[- ]based|veggie|meatless)\b/i.test(String(stripPeople(parts.headline, parts.creators)));
     // A vegan-named channel must not turn a clearly meaty dish or recipe vegan on its own.
-    if (veganCreator && verdict === 'vegan' && matches.length && !veganHits && (clearRecipe || meatyDish || !onlyGenericMeat)) {
+    // 0.4.76: if the title itself already has a vegan/plant-based modifier, that wording — not the
+    // channel name — produced the vegan verdict; do not flip it back.
+    if (veganCreator && verdict === 'vegan' && matches.length && !veganHits && !titlePlantMod && (clearRecipe || meatyDish || !onlyGenericMeat)) {
       verdict = 'nonvegan';
     }
     if (veganCreator && !cultivatedDish && (verdict === 'nonvegan' || verdict === 'vegan') && onlyGenericMeat && !clearRecipe && !meatyDish) {

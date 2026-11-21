@@ -93,12 +93,13 @@
     t = t.replace(/\b(?:non|not)[- ]vegan\b/g, ' NONVEGANMARK ');
     t = shadeNeutralize(t, beauty);
     // common false friends
-    t = t.replace(/\b(?:peanut|almond|cashew|cocoa|shea|nut|seed|apple|sun|sunflower|soy|body|mango|cocoa)[- ]butter\b/g, ' plantbutter ');
+    t = t.replace(/\b(?:peanut|almond|cashew|hazelnut|walnut|pecan|pistachio|macadamia|coconut|cocoa|cacao|shea|nut|seeds?|apple|sun|sunflower|sesame|pumpkin|soy|soya|body|mango)[- ]butters?\b/g, ' plantbutter ');
+    t = t.replace(/\b(?:butter[- ](?:beans?|lettuce|squash|heads?|cups?)|butter(?:beans?|heads?|nuts?|cups?)|egg[- ]plants?)\b/g, ' ');
     // Silk (the plant-milk brand) must be recognised before "oat milk" etc. collapse to plantmilk.
     t = t.replace(/\bsilk(?= (?:unsweetened|original|almond|oat|soy|organic|protein|nextmilk|creamer|vanilla|dairy|light|cashew|coconut|plant|chocolate|ultra|extra creamy)\b)/g, ' silkbrand');
     t = t.replace(/\b(?:coconut|oat|almond|soy|rice|cashew|plant|hemp|pea|macadamia|flax|pistachio)[- ]?(?:milk|cream|cheese|creamer|beverage|drink)s?\b/g, ' plantmilk ');
     // "Dairy Free Cheddar Slices": dairy-free cheese/milk analogues
-    t = t.replace(/\b(?:(?:dairy|milk)[- ]free|vegan|plant[- ]based)\s+(?:(?!(?:and|or|with|plus|real|not)\b)[a-z]+\s+){0,2}(?:cheddar|mozzarella|parmesan|cheeses?|butter|creamer|cream cheese|ice cream|milk)(?:\s+cheeses?)?\b/g, ' plantmilk ');
+    t = t.replace(/\b(?:(?:dairy|milk)[- ]free|vegan|plant[- ]based|meatless)\s+(?:(?!(?:and|or|with|plus|real|not|vs|versus|but|though|ate|eaten|eat|tried|tries|try|made|makes|make)\b)[a-z]+\s+){0,3}(?:cheddar|mozzarella|parmesan|cheeses?|butter|creamer|cream cheese|ice cream|milk|beef|pork|chicken|turkey|ham|steaks?|sausages?|bacon|meats?|fish|tuna|salmon|jerky|nuggets?|roast beef)(?:\s+cheeses?)?\b/g, ' plantmilk ');
     // 0.4.73: unit-level dairy-free claims (zero dairy, non-dairy, 100% dairy-free, made from cashews) also
     // clear cheese/butter/brie/cream/milk words in the same title, not only when they sit next to the claim.
     // Lactose-free is deliberately omitted: it still describes dairy milk.

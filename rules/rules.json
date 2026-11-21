@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "listVersion": "2026.11.19.1",
+ "listVersion": "2026.11.21.1",
  "data": {
   "classifier": {
    "ANIMAL": [
@@ -200,6 +200,10 @@
      "flags": "g"
     },
     {
+     "$re": "\\b(?:vegan|plant[- ]based|veggie|meatless)\\b(?:[- ](?!(?:vs|versus|or|but|though|although|except|unlike|compared|against|and|with|plus|real|not|than|ate|eaten|eats|eating|eat|tried|tries|trying|try|tasted|tastes|tasting|made|makes|making|make|reviews?|reviewed|reviewing|reacts?|reacted|reacting|ordered|orders|ordering)\\b)[a-z][\\w']*){0,3}[- ](?:steaks?|cheesesteaks?|burgers?|cheeseburgers?|bacon|ribs|wings|sausages?|meatballs?|meatloaf|chicken|turkey|duck|cheeses?|milk|butters?|ice cream|bbq|meats?|fish|tuna|salmon|shrimp|prawns?|seafood|jerky|nuggets?|beef|pork|ham|lamb|veal|brisket|pepperoni|salami|pastrami|chorizo|wagyu|hot dogs?|pulled pork)\\b",
+     "flags": "g"
+    },
+    {
      "$re": "\\bgarden[- ](?:fish ?sticks?|fish|burgers?|sausages?|nuggets?|steaks?|meatballs?)\\b",
      "flags": "g"
     },
@@ -208,7 +212,7 @@
      "flags": "g"
     },
     {
-     "$re": "\\b(?:peanut|almond|cocoa|cacao|shea|apple|sun|cashew|body|lip|mango|murumuru|kokum|cupuacu|avocado|illipe|babassu|tucuma|hair|face|hand|foot)[- ]butters?\\b|\\bbutter[- ](?:balms?|lip|sticks?|mask)\\b|\\b(?:lip|balm|lotion|moisturi[sz]er|serum|skin ?care|cosmetics?|makeup|lipstick|gloss)\\b[^.|]{0,40}\\bbutters?\\b(?![- ]?(?:milk|fat))|\\bbutters?\\b[^.|]{0,40}\\b(?:lip ?balm|balm|lotion|moisturi[sz]er|lipstick|lip ?gloss|lip ?treatment|skin ?care)\\b",
+     "$re": "\\b(?:(?:peanut|almond|cocoa|cacao|shea|apple|sun|sunflower|cashew|hazelnut|walnut|pecan|pistachio|macadamia|coconut|sesame|pumpkin|soy|soya|nut|seeds?|body|lip|mango|murumuru|kokum|cupuacu|avocado|illipe|babassu|tucuma|hair|face|hand|foot)[- ]butters?|butter[- ](?:beans?|lettuce|squash|heads?|cups?)|butter(?:beans?|heads?|nuts?|cups?)|egg[- ]plants?)\\b|\\bbutter[- ](?:balms?|lip|sticks?|mask)\\b|\\b(?:lip|balm|lotion|moisturi[sz]er|serum|skin ?care|cosmetics?|makeup|lipstick|gloss)\\b[^.|]{0,40}\\bbutters?\\b(?![- ]?(?:milk|fat))|\\bbutters?\\b[^.|]{0,40}\\b(?:lip ?balm|balm|lotion|moisturi[sz]er|lipstick|lip ?gloss|lip ?treatment|skin ?care)\\b",
      "flags": "g"
     },
     {

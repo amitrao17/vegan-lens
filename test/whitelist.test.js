@@ -31,7 +31,7 @@ test('user entries and disabling built-ins', () => {
   assert.strictEqual(classify('Acme Bakery Bread').verdict, 'unknown');
   const r = classify('Acme Bakery Bread', { whitelist: ['acme bakery'] });
   assert.strictEqual(r.verdict, 'vegan'); assert.ok(r.positives.includes('brand: acme bakery'));
-  assert.strictEqual(classify('Tofurky Plant-Based Deli Slices Smoked Ham', { whitelistDisabled: ['Tofurky'] }).verdict, 'non-vegan');
+  assert.strictEqual(classify('Tofurky Smoked Ham', { whitelistDisabled: ['Tofurky'] }).verdict, 'non-vegan');
   assert.strictEqual(classify('Tofurky Plant-Based Deli Slices Smoked Ham').verdict, 'vegan');
 });
 test('excluded non-fully-vegan brands are not built in', () => {

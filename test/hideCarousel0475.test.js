@@ -4,9 +4,9 @@ const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 
-test('versions agree at 0.4.75', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.75');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.75');
+test('versions agree at 0.4.76', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.76');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.76');
 });
 
 test('hide CSS never display:none\'s card content and pins the label top-left', () => {

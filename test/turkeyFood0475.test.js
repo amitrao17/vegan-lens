@@ -5,9 +5,9 @@ const fs = require('fs'), path = require('path');
 const C = require('../contentClassifier.js');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 
-test('versions agree at 0.4.75', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.75');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.75');
+test('versions agree at 0.4.76', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.76');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.76');
 });
 
 const FOOD = [

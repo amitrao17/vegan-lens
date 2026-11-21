@@ -1,3 +1,12 @@
+## 0.4.76
+
+YouTube home-feed false positives: plant compounds that contain an animal word, and vegan-named dishes whose meat noun is a few words after "vegan".
+
+- Plant compounds that contain an animal word are not animal evidence: butter beans, butter lettuce, butternut squash, buttercup, butterhead, peanut/almond/cashew/nut/seed butters, apple butter, cocoa butter, shea butter, eggplant and "egg plant". Egg noodles, butter chicken, brown butter and salted butter still count as animal.
+- A vegan, plant-based, veggie or meatless modifier now clears the meat or dairy noun it applies to in a noun phrase, even with a few intervening words ("New & Improved Vegan Deli Roast Beef + French Dip"). It no longer has to sit immediately next to the meat word.
+- Contrast phrasing is not a modifier: "vegan vs beef" and "I'm vegan but ate beef" keep the meat evidence and are not called vegan. A vegan-named channel still cannot turn a plainly meaty title ("Grilled Chicken Recipe") vegan, but it no longer flips a title that already says vegan or plant-based back to meat.
+- Fix: a Merle O'Neal "Viral Butter Beans" YouTube card was hidden "about dairy/eggs", and a Gluten Free Vegan Takes "Vegan Deli Roast Beef + French Dip" card was hidden "about beef".
+
 ## 0.4.75
 
 Washington Post Thanksgiving recipe carousel: hide mode no longer blanks cards, turkey-as-food is caught, and off-screen carousel slides are scanned.
