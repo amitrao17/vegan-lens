@@ -11,9 +11,9 @@ const POST = 'Looking for a restaurant where I can find a good vegan meal halfwa
 const AUTO = 'May be an image of steak';
 const EXACT = { headline: POST, alt: AUTO, author: 'Peg Nemoff', community: 'Baltimore Vegans' };
 
-test('versions agree at 0.4.76', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.76');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.76');
+test('versions agree at 0.4.77', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.77');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.77');
 });
 
 test('Baltimore Vegans meetup post with auto "steak" alt is not hidden', () => {

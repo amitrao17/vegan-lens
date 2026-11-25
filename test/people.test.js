@@ -101,7 +101,7 @@ test('wiring: manifest loads people.js before web.js; popup toggles default on; 
   const html = fs.readFileSync(__dirname + '/../popup.html', 'utf8'), pj = fs.readFileSync(__dirname + '/../popup.js', 'utf8'), w = fs.readFileSync(__dirname + '/../web.js', 'utf8');
   assert.match(html, /Mark vegan public figures[\s\S]*id="markPeople"/); assert.match(html, /Mark public meat endorsers[\s\S]*id="markMeat"/);
   assert.match(pj, /markPeople: true, markMeat: true/); assert.match(w, /markPeople: true, markMeat: true/);
-  assert.match(w, /function scan\(root\) \{\s*if \(!active\(\)\) return;\s*markPeople\(root\);/); // active() includes isPageDisabled
+  assert.match(w, /function scan\(root(?:, from, unitsCache, token)?\) \{[\s\S]*?if \(!active\(\)\) return;[\s\S]*?markPeople\(root\);/); // active() includes isPageDisabled; 0.4.77 scan is chunked
   assert.match(w, /P\.isPageDisabled\(S\.pageBlock/); assert.match(w, /VP\.unmarkAll\(document\)/);
   assert.match(fs.readFileSync(__dirname + '/../background.js', 'utf8'), /type === 'people'/);
 });

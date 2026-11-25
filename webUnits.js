@@ -356,7 +356,51 @@
     return n;
   }
   const unitText = el => el ? (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 6000) : '';
-  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage };
+  // 0.4.77: UI we inject; MutationObservers must ignore these so chips/blur don't rescan the page.
+  const VL_UI_SEL = '.vl-w-chip, .vl-w-ctx, .vl-blur-label, .vl-p-pill, .vl-w-caution, .vl-offer, .vl-attr, #vl-w-banner, #vl-brand-banner';
+  function isVlUi(el) {
+    if (!el) return false;
+    if (el.nodeType === 3) el = el.parentElement;
+    if (!el || el.nodeType !== 1) return false;
+    try { if (el.closest && el.closest(VL_UI_SEL)) return true; } catch (e) {}
+    const cl = el.classList;
+    if (cl && (cl.contains('vl-mark-icon') || cl.contains('vl-mark-text') || cl.contains('vl-img-blur') || cl.contains('vl-img-card'))) return true;
+    return false;
+  }
+  // Batches element work onto rAF/idle callbacks and yields after maxMs so a mutation
+  // storm cannot run unbounded main-thread tasks.
+  function createScanBatcher(opts) {
+    opts = opts || {};
+    const now = opts.now || (typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now());
+    const schedule = opts.schedule || (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn => setTimeout(fn, 0)));
+    const maxMs = opts.maxMs || 50;
+    const process = opts.process;
+    let queue = [], queued = typeof Set === 'function' ? new Set() : null;
+    let timer = null, runs = 0, processed = 0, added = 0;
+    function has(el) { return queued ? queued.has(el) : queue.indexOf(el) >= 0; }
+    function remember(el) { if (queued) queued.add(el); }
+    function forget(el) { if (queued) queued.delete(el); }
+    function add(el) {
+      if (!el || isVlUi(el) || has(el)) return false;
+      remember(el); queue.push(el); added++;
+      if (!timer) timer = schedule(flush);
+      return true;
+    }
+    function flush() {
+      timer = null; runs++;
+      const start = now();
+      while (queue.length) {
+        const el = queue.shift(); forget(el);
+        if (process) process(el);
+        processed++;
+        if (queue.length && now() - start >= maxMs) { timer = schedule(flush); return; }
+      }
+    }
+    function stats() { return { runs: runs, processed: processed, added: added, pending: queue.length }; }
+    function reset() { queue = []; if (queued) queued.clear(); timer = null; runs = 0; processed = 0; added = 0; }
+    return { add, flush, stats, reset, get pending() { return queue.length; } };
+  }
+  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage, isVlUi, VL_UI_SEL, createScanBatcher };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganWebUnits = api;
 })(typeof self !== 'undefined' ? self : this);

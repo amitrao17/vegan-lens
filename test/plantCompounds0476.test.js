@@ -9,9 +9,9 @@ const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const YT = { requireHeadline: true };
 const v = (t, c) => C.classify({ headline: t, creators: c }, YT);
 
-test('versions agree at 0.4.76', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.76');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.76');
+test('versions agree at 0.4.77', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.77');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.77');
 });
 
 const PLANT_COMPOUNDS = [

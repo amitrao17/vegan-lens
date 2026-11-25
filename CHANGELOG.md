@@ -1,3 +1,13 @@
+## 0.4.77
+
+YouTube home feed: Thanksgiving turkey is food, and scrolling no longer freezes the tab.
+
+- Holiday and meal context makes a weak "turkey" (or duck/ham) title as strong as chicken: Thanksgiving, Friendsgiving, Christmas, holiday turkey, "your turkey", turkey upgrade, deep-fry / stuff / carve. A cooking, chef, kitchen or BBQ channel name is also food context. "Vegan Thanksgiving Turkey", Tofurky and plant-based turkey roast stay vegan.
+- Country, travel and geopolitics senses stay unflagged (Turkey the country, "holiday in Turkey", elections, "cold turkey", "turkey vulture"). "holiday turkey" is no longer treated as travel.
+- YouTube performance: Chrome "Page unresponsive" dialogs while scrolling were caused by the 0.4.75 carousel scanner matching almost the entire YouTube home feed (`[role=list]`, `[role=region]`, `class*=scroll`), then rescanning it on every scroll event and every added node. A 40ms yield restarted that expensive query from the top, and our own chips/blur retriggered the MutationObserver.
+- Scans now look only at real carousels and new or changed cards, ignore mutations we cause, debounce scroll with idle/rAF, skip already-classified cards unless their text changes, and chunk work so a main-thread turn stays around 50ms.
+- Fix: a Sam the Cooking Guy card, "Your Thanksgiving Turkey Is About to Get a MASSIVE Upgrade!", was not flagged. Scrolling YouTube with 0.4.76 installed produced "Page unresponsive" dialogs.
+
 ## 0.4.76
 
 YouTube home-feed false positives: plant compounds that contain an animal word, and vegan-named dishes whose meat noun is a few words after "vegan".

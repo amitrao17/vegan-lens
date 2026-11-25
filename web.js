@@ -15,6 +15,13 @@
   const PIN = U.isPinterestHost(location.hostname); // 0.4.60
   const UE = U.isUberEatsHost(location.hostname); // 0.4.66
   const seen = new WeakSet();
+  let ownMut = 0;
+  function withOwnMutations(fn) {
+    ownMut++;
+    try { return fn(); }
+    finally { const later = typeof queueMicrotask === 'function' ? queueMicrotask : (cb => Promise.resolve().then(cb)); later(() => { ownMut--; }); }
+  }
+
   const UNIT_SEL = [
     'article', '[role=article]',
     '#search .g, #rso > div > div[data-hveid], div.MjjYud', // Google
@@ -275,7 +282,8 @@
     document.querySelectorAll('.vl-w-dim, .vl-w-dim-in, .vl-w-hide, .vl-w-hide-in').forEach(u => { if (u.dataset.vlAd) return; resetUnit(u); processUnit(u); });
   }
 
-  function processUnit(el) {
+  function processUnit(el) { return withOwnMutations(() => processUnitWork(el)); }
+  function processUnitWork(el) {
     if (seen.has(el)) return; seen.add(el);
     if (skippable(el)) return;
     const role = U.unitRole(el, { youtube: YT, pinterest: PIN, ubereats: UE, unitSel: UNIT_SEL });
@@ -335,7 +343,8 @@
     const sel = AD.all.split(',').map(x => x.trim()).find(x => { try { return el.matches(x); } catch (e) { return false; } });
     return 'selector ' + (sel || '(ancestor)');
   }
-  function processAd(el, label) {
+  function processAd(el, label) { return withOwnMutations(() => processAdWork(el, label)); }
+  function processAdWork(el, label) {
     if (!el || seen.has(el) || el.dataset.vlAd) return;
     if (el.parentElement && el.parentElement.closest('[data-vl-ad]:not([data-vl-ad=container])')) return;
     seen.add(el);
@@ -530,16 +539,24 @@
   // 0.4.75: recipe / news carousels keep off-screen slides in the DOM; a MutationObserver
   // alone does not see a horizontal scroll. Watch overflow-x containers and observe
   // pending cards so they are classified as they come into view.
-  const SCROLL_SEL = '[class*=carousel i], [class*=slider i], [class*=scroll i], [class*=swiper i], [class*=embla i], [role=list], [role=region], [data-carousel], [data-slider]';
+  // 0.4.77: do not match generic [role=list], [role=region] or class*=scroll — on YouTube
+  // those select most of the home feed and made every scroll/mutation rescan the page.
+  const SCROLL_SEL = '[class*=carousel i], [class*=slider i], [class*=swiper i], [class*=embla i], [data-carousel], [data-slider], yt-horizontal-list-renderer, ytd-reel-shelf-renderer, ytd-rich-shelf-renderer';
+  const hScrollCache = typeof WeakMap === 'function' ? new WeakMap() : null;
   function isHScroll(el) {
     if (!el || el.nodeType !== 1) return false;
+    if (hScrollCache && hScrollCache.has(el)) return hScrollCache.get(el);
+    let ok = false;
     try {
+      const name = (el.localName || '') + ' ' + String(el.className || '');
+      const hinted = /carousel|slider|swiper|embla|horizontal-list|reel-shelf|rich-shelf/i.test(name) || !!(el.hasAttribute && (el.hasAttribute('data-carousel') || el.hasAttribute('data-slider')));
       const st = el.ownerDocument && el.ownerDocument.defaultView && el.ownerDocument.defaultView.getComputedStyle && el.ownerDocument.defaultView.getComputedStyle(el);
       const ox = st ? st.overflowX : '';
-      const hinted = !!(el.className && /carousel|slider|swiper|embla/i.test(String(el.className)));
-      if (el.scrollWidth > el.clientWidth + 8) return !st || ox === 'auto' || ox === 'scroll' || ox === 'overlay' || ox === 'hidden' || hinted;
-      return hinted && (ox === 'auto' || ox === 'scroll' || ox === 'overlay' || ox === 'hidden');
-    } catch (e) { return false; }
+      if (el.scrollWidth > el.clientWidth + 8) ok = !st || ox === 'auto' || ox === 'scroll' || ox === 'overlay' || ox === 'hidden' || hinted;
+      else ok = hinted && (ox === 'auto' || ox === 'scroll' || ox === 'overlay' || ox === 'hidden');
+    } catch (e) {}
+    if (hScrollCache) hScrollCache.set(el, ok);
+    return ok;
   }
   function scrollerRoots(root) {
     const scope = root && root.nodeType === 1 ? root : document;
@@ -547,7 +564,14 @@
     try {
       const cands = [...(scope.querySelectorAll ? scope.querySelectorAll(SCROLL_SEL) : [])];
       if (scope.nodeType === 1) cands.unshift(scope);
-      (scope.querySelectorAll ? scope.querySelectorAll(UNIT_SEL) : []).forEach(u => { for (let p = u.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) cands.push(p); });
+      // Walk parents of a few unseen units only (not the whole feed on every scan).
+      const units = scope.querySelectorAll ? scope.querySelectorAll(UNIT_SEL) : [];
+      let walked = 0;
+      for (const u of units) {
+        if (seen.has(u)) continue;
+        if (++walked > 40) break;
+        for (let p = u.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) cands.push(p);
+      }
       for (const el of cands) { if (!el || seenS.has(el)) continue; seenS.add(el); if (isHScroll(el)) out.push(el); }
     } catch (e) {}
     return out;
@@ -557,25 +581,35 @@
     for (const r of scrollerRoots(root)) {
       try {
         r.querySelectorAll('a[href], [role=listitem], li, [class*=card i], [class*=slide i], [class*=item i]').forEach(a => {
+          if (seen.has(a)) return;
           if (!a.querySelector || !a.querySelector('img, picture, [role=img]')) return;
-          const txt = String(a.innerText || a.textContent || a.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
+          const txt = String(a.textContent || a.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
           if (txt.length < 8) return;
           const card = a.closest ? (a.closest('[class*=card i], [role=listitem], li, [class*=slide i], a[href]') || a) : a;
-          if (card && card !== document.body) out.add(card);
+          if (card && card !== document.body && !seen.has(card)) out.add(card);
         });
       } catch (e) {}
     }
     return [...out];
   }
   const overflowWatched = typeof WeakSet === 'function' ? new WeakSet() : { has() { return false; }, add() {} };
+  const scrollQueued = typeof WeakSet === 'function' ? new WeakSet() : { has() { return false; }, add() {}, delete() {} };
   function watchOverflow(root) {
     for (const el of scrollerRoots(root)) {
       if (overflowWatched.has(el) || !el.addEventListener) continue;
       overflowWatched.add(el);
-      el.addEventListener('scroll', () => { requestIdle(() => { if (active()) scan(el); }); }, { passive: true });
+      el.addEventListener('scroll', () => {
+        if (scrollQueued.has(el)) return;
+        scrollQueued.add(el);
+        requestIdle(() => {
+          scrollQueued.delete(el);
+          if (!active()) return;
+          for (const c of scrollerCards(el)) if (!seen.has(c)) processUnit(c);
+        });
+      }, { passive: true });
     }
   }
-  const pendingIo = typeof IntersectionObserver === 'function' ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && active()) processUnit(e.target); }), { root: null, rootMargin: '300px', threshold: 0 }) : null;
+  const pendingIo = typeof IntersectionObserver === 'function' ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && active() && !seen.has(e.target)) processUnit(e.target); }), { root: null, rootMargin: '300px', threshold: 0 }) : null;
   function observePendingUnits(root) {
     if (!pendingIo) return;
     const scope = root && root.nodeType === 1 ? root : document;
@@ -584,25 +618,62 @@
     for (const u of list) { if (u && u !== document.body && u !== document.documentElement && !seen.has(u)) pendingIo.observe(u); }
   }
 
-  function scan(root) {
-    if (!active()) return;
-    markPeople(root);
-    const start = performance.now();
-    scanAds(root);
-    const units = [];
-    if (/(^|\.)google\./.test(location.hostname)) for (const c of richCards(root.nodeType === 1 ? root : document)) { c.dataset.vlRich = '1'; units.push(c); }
-    // 0.4.75: horizontal carousel slides (Washington Post recipe rails, etc.)
-    for (const c of scrollerCards(root.nodeType === 1 ? root : document)) { c.dataset.vlRich = '1'; units.push(c); }
-    if (root.nodeType === 1 && root.matches(UNIT_SEL)) units.push(root);
-    try { units.push(...(root.querySelectorAll ? root.querySelectorAll(UNIT_SEL) : [])); } catch (e) { return; }
-    for (const u of units) { processUnit(u); if (performance.now() - start > 40) { requestIdle(() => scan(root)); return; } } // yield on huge pages
-    watchOverflow(root);
-    observePendingUnits(root);
-    blurImages(root.nodeType === 1 || root.nodeType === 9 ? root : document); // after cards: blur follows the card verdict (0.4.28)
-    imageStats(root.nodeType === 1 || root.nodeType === 9 ? root : document); // 0.4.49 opt-in aggregate, after verdicts
-    processPage();
-  }
   const requestIdle = window.requestIdleCallback || (f => setTimeout(f, 50));
+  const requestFrame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (f => setTimeout(f, 16));
+  // One queue for mutation-discovered units so a storm is chunked (~50ms) instead of a full-document scan per node.
+  const unitBatcher = U.createScanBatcher({
+    maxMs: 50,
+    schedule: fn => requestIdle(fn),
+    process: el => { if (!el || !el.isConnected || !active()) return; processAdded(el); }
+  });
+  function unitsFrom(n) {
+    if (!n || n.nodeType !== 1 || !n.matches) return [];
+    const out = [];
+    try {
+      if (n.matches(UNIT_SEL)) out.push(n);
+      if (n.querySelectorAll) for (const u of n.querySelectorAll(UNIT_SEL)) out.push(u);
+    } catch (e) {}
+    return out;
+  }
+  function processAdded(n) {
+    if (!n || n.nodeType !== 1 || U.isVlUi(n)) return;
+    if (n.closest && n.closest(U.VL_UI_SEL)) return;
+    const units = unitsFrom(n);
+    if (units.length) { for (const u of units) if (!seen.has(u)) processUnit(u); return; }
+    if (YT) { const card = n.closest && n.closest(U.YT_CARD); if (card && !seen.has(card)) { processUnit(card); return; } }
+    if (n.matches && n.matches(UNIT_SEL) && !seen.has(n)) processUnit(n);
+  }
+
+  let scanToken = 0;
+  function scan(root, from, unitsCache, token) {
+    if (!active()) return;
+    if (from && token !== scanToken) return; // a newer full scan superseded this chunk
+    if (!from) token = ++scanToken;
+    const start = performance.now();
+    withOwnMutations(() => {
+      if (!from) {
+        markPeople(root);
+        scanAds(root);
+        unitsCache = [];
+        if (/(^|\.)google\./.test(location.hostname)) for (const c of richCards(root.nodeType === 1 ? root : document)) { c.dataset.vlRich = '1'; unitsCache.push(c); }
+        // 0.4.75: horizontal carousel slides (Washington Post recipe rails, etc.)
+        for (const c of scrollerCards(root.nodeType === 1 ? root : document)) { c.dataset.vlRich = '1'; unitsCache.push(c); }
+        if (root.nodeType === 1 && root.matches && root.matches(UNIT_SEL)) unitsCache.push(root);
+        try { if (root.querySelectorAll) unitsCache.push(...root.querySelectorAll(UNIT_SEL)); } catch (e) { return; }
+        from = 0;
+      }
+      let i = from;
+      for (; i < unitsCache.length; i++) {
+        processUnit(unitsCache[i]);
+        if (performance.now() - start > 50) { requestIdle(() => scan(root, i + 1, unitsCache, token)); return; }
+      }
+      watchOverflow(root);
+      observePendingUnits(root);
+      blurImages(root.nodeType === 1 || root.nodeType === 9 ? root : document);
+      imageStats(root.nodeType === 1 || root.nodeType === 9 ? root : document);
+      processPage();
+    });
+  }
 
   function undo() {
     document.querySelectorAll('.vl-w-unit, .vl-w-dim, .vl-w-dim-in, .vl-w-hide, .vl-w-hide-in').forEach(el => { if (io) io.unobserve(el); el.classList.remove('vl-w-unit', 'vl-w-vegan', 'vl-w-revealed', 'vl-w-ad', ...U.DIM_CLASSES); delete el.dataset.vlW; delete el.dataset.vlAd; el._vlKey = null; seen.delete(el); });
@@ -613,11 +684,26 @@
     offerShown = false; pageDone = false; pageCtx = { vegan: false, why: '' }; headerChecked = false; titleVerdicts.clear(); document.documentElement.classList.remove('vl-page-vegan'); zero(); send();
   }
 
-  let pending = new Set(), touched = new Set(), timer = null;
+  let moTimer = null, moPending = [], moTouched = [];
   const mo = new MutationObserver(muts => {
-    for (const m of muts)  { const tg = m.target && (m.target.nodeType === 1 ? m.target : m.target.parentElement); if (tg && !tg.closest('.vl-w-chip')) touched.add(tg); if (m.type === 'characterData' && m.target.nodeType === 3) pending.add(m.target); for (const n of m.removedNodes || []) if (n.nodeType === 1 && n.classList && n.classList.contains('vl-w-chip') && tg) touched.add(tg); for (const n of m.addedNodes) if (n.nodeType === 1 ? !n.classList.contains('vl-w-chip') && !n.classList.contains('vl-w-ctx') && !n.classList.contains('vl-p-pill') : n.nodeType === 3 && !(n.previousSibling && n.previousSibling.classList && n.previousSibling.classList.contains('vl-p-pill'))) pending.add(n); }
-    if (!timer) timer = setTimeout(() => { timer = null;
-      if (location.href !== lastUrl) { lastUrl = location.href; try { chrome.runtime.sendMessage({ type: 'reset' }); } catch (e) {} P.reportPage(); undo(); scan(document); return; } const p = pending, t = touched; pending = new Set(); touched = new Set(); requestIdle(() => { t.forEach(n => n.isConnected && recheck(n)); p.forEach(n => n.isConnected && scan(n)); }); }, 400);
+    if (ownMut) return; // mutations we just wrote (chips, blur, classes)
+    for (const m of muts) {
+      const tg = m.target && (m.target.nodeType === 1 ? m.target : m.target.parentElement);
+      if (tg && U.isVlUi(tg)) continue;
+      if (tg) moTouched.push(tg);
+      for (const n of m.addedNodes) {
+        if (n.nodeType === 1) { if (U.isVlUi(n) || (n.classList && (n.classList.contains('vl-w-chip') || n.classList.contains('vl-w-ctx') || n.classList.contains('vl-p-pill') || n.classList.contains('vl-blur-label')))) continue; moPending.push(n); }
+      }
+    }
+    if (!moTimer) moTimer = setTimeout(() => {
+      moTimer = null;
+      if (location.href !== lastUrl) { lastUrl = location.href; try { chrome.runtime.sendMessage({ type: 'reset' }); } catch (e) {} P.reportPage(); undo(); scan(document); return; }
+      const p = moPending, t = moTouched; moPending = []; moTouched = [];
+      requestIdle(() => {
+        for (const n of t) if (n && n.isConnected) recheck(n);
+        for (const n of p) if (n && n.isConnected && !U.isVlUi(n)) unitBatcher.add(n);
+      });
+    }, 400);
   });
 
   chrome.storage.sync.get(DEFAULTS, async s => {
@@ -630,7 +716,7 @@
     for (const ms of [3000, 10000]) setTimeout(() => { if (active()) scan(document); }, ms);
     // YouTube swaps href/title/text in place on recycled cards (no childList): watch those too, plus a periodic audit.
     mo.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['href', 'title', 'aria-label'] });
-    setInterval(() => active() && auditAll(), YT ? 1000 : 3000);
+    setInterval(() => active() && auditAll(), 3000);
   });
   // 0.4.46 SPA navigation (Gmail opens a message by changing the hash): rescan even before the next DOM mutation.
   const onNav = () => setTimeout(() => { if (location.href === lastUrl || !active()) return; lastUrl = location.href; try { chrome.runtime.sendMessage({ type: 'reset' }); } catch (e) {} P.reportPage(); undo(); scan(document); }, 600);

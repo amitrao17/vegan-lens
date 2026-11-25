@@ -163,7 +163,12 @@
     // 0.4.75: "turkey" (and duck/ham/cod…) is a weak title term because it can be a country or idiom,
     // so a bare "Turkey" does not hide. A cut, dish or recipe word in the same title ("turkey thighs",
     // "braised turkey", "turkey gravy") is food, and the term is then as strong as "chicken".
-    const foodCtx = !!(AMBIG_FOOD_CTX && (AMBIG_FOOD_CTX.lastIndex = 0, AMBIG_FOOD_CTX.test(headText || String(parts.headline || ''))));
+    // 0.4.77: holiday/meal phrasing (Thanksgiving turkey, your turkey, turkey upgrade) is also food,
+    // and a cooking/chef/kitchen channel is food context, unless the title is clearly geopolitics/travel.
+    const foodHead = headText || String(parts.headline || '');
+    const cookChannel = [].concat(parts.creators || [], parts.author || []).some(n => /\b(?:cook(?:ing|ery)|chef|kitchen|bbq|barbe(?:cue|que)|recipes?)\b/i.test(String(n || '')));
+    const geoTitle = /\b(?:election|elections|ankara|istanbul|antalya|izmir|visa|lira|t[uü]rkiye|geopolitics|president|parliament|nato|earthquake|travel|vacation|tourism|protests?)\b/i.test(String(parts.headline || ''));
+    const foodCtx = !!(AMBIG_FOOD_CTX && (AMBIG_FOOD_CTX.lastIndex = 0, AMBIG_FOOD_CTX.test(foodHead))) || (cookChannel && !geoTitle);
     const headStrong = opts.sensitivity !== 'low' && matches.some(m => (m.where === 'title' || m.where === 'tag') && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:(?:grass|butter|goat|sheep|cow|skim|whole)?milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && (!/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) || foodCtx) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
     const strongHead = matches.some(m => m.where === 'title' && STRONG_PAGE.test(m.label));
     if (opts.communityVegan) {
