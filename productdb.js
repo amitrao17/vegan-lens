@@ -63,6 +63,7 @@
   const C = root.VeganClassifier, D = { resolve: (p, d) => C.resolveDb(p, d) };
   let done = false;
   function run() {
+    if (typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive && !VeganLensBrand.alive()) return; // 0.4.78: orphaned script after reload
     if (done || !C || document.getElementById('vl-banner')) return; // one banner per page
     const h1 = document.querySelector('h1'); if (!h1) return;
     const info = fromJsonLd([...document.querySelectorAll('script[type="application/ld+json"]')].map(s => s.textContent)) || fromDom(document);

@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive && !VeganLensBrand.alive()) return; // 0.4.78: orphaned script after reload
   const C = window.VeganClassifier;
   const P = window.VeganPage, A = window.VeganAdUnits, W = window.VeganSwaps, V = window.VeganSites;
   const SITE = (V && V.siteOf(location.hostname)) || 'amazon'; // 'amazon' | 'grocery'
@@ -298,6 +299,7 @@
     }, 300);
   }
   function run() {
+    if (typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive && !VeganLensBrand.alive()) return;
     if (location.href !== lastUrl) { lastUrl = location.href; try { chrome.runtime.sendMessage({ type: 'reset' }); } catch (e) {} P.reportPage(); if (GROCERY || P.isDisabled(S, location.href)) undo(); }
     if (P.isDisabled(S, location.href)) return; // disabled on this page: do nothing
     if (V.isRestaurantHost(location.hostname) && S.restaurantSites === false) { undo(); return; } // restaurant-supply toggle off

@@ -39,6 +39,6 @@ test('wiring: marketplace.js also on facebook.com (SPA nav), self-gated; web.js 
   const m = JSON.parse(fs.readFileSync(__dirname + '/../manifest.json', 'utf8'));
   assert.ok(m.content_scripts.some(c => c.js.includes('marketplace.js') && c.matches.includes('*://*.facebook.com/*')));
   const mp = fs.readFileSync(__dirname + '/../marketplace.js', 'utf8'); assert.match(mp, /if \(!on\(\) \|\| !onMp\(\)\) return;/); assert.match(mp, /scanAds\(\)/);
-  assert.match(fs.readFileSync(__dirname + '/../web.js', 'utf8'), /const active = \(\) => !\(.*facebook.*marketplace/);
+  assert.match(fs.readFileSync(__dirname + '/../web.js', 'utf8'), /const active = \(\) => (?:extAlive\(\) && )?!\(.*facebook.*marketplace/);
   assert.match(fs.readFileSync(__dirname + '/../share.js', 'utf8'), /__vlShareInit/);
 });

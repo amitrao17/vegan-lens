@@ -1,3 +1,12 @@
+## 0.4.78
+
+YouTube (and other pages) no longer try to load the Vegan Lens leaf from a chrome-extension URL.
+
+- The 16px mark is now an inline SVG drawn in brand.js, the same approach the Android app already used on pages that block third-party images. Labels keep the leaf without fetching `chrome-extension://…/icons/icon16.png`.
+- That fetch was what Chrome reported as "Unsafe attempt to load URL … from frame with URL https://www.youtube.com/. Domains, protocols and ports must match." The icon is listed in web_accessible_resources for `<all_urls>` and is still there for anything that might load it that way, but YouTube's page (CSP / cross-origin rules) still refused to display it from the extension origin. An orphaned content script left after a reload can make the same error look like a stale extension ID.
+- If the extension is reloaded and a tab's old content script is still running (`chrome.runtime.id` is gone), the script now stops quietly instead of throwing. No other page-facing code path sets a chrome-extension URL as an image or stylesheet.
+- Fix: chrome://extensions showed repeated unsafe-load errors for icon16.png on youtube.com and /watch, stacked at brand.js icon().
+
 ## 0.4.77
 
 YouTube home feed: Thanksgiving turkey is food, and scrolling no longer freezes the tab.

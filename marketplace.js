@@ -64,6 +64,7 @@
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   root.VeganMarketplace = api;
   if (typeof document === 'undefined' || !root.chrome || !chrome.storage) return;
+  if (root.VeganLensBrand && VeganLensBrand.alive && !VeganLensBrand.alive()) return; // 0.4.78: orphaned script after reload
 
   const C = root.VeganClassifier;
   const DEFAULTS = { enabled: true, mode: 'dim', strictness: 'strict', marketplace: true, whitelist: [], whitelistDisabled: [], pageBlock: [], siteBlock: [] };
@@ -72,7 +73,7 @@
   try { chrome.runtime.onMessage.addListener(m => { if (m && m.type === 'recount') send(); }); } catch (e) {} // 0.4.59
   const send = () => { try { chrome.runtime.sendMessage({ type: 'counts', source: 'marketplace', counts }); } catch (e) {} };
   const count = k => { counts[k]++; clearTimeout(sendT); sendT = setTimeout(send, 300); };
-  const on = () => S.enabled && S.marketplace;
+  const on = () => S.enabled && S.marketplace && (!root.VeganLensBrand || !VeganLensBrand.alive || VeganLensBrand.alive());
   function pill(el, cls, text, title) { const b = document.createElement('span'); b.className = 'vl-mp-pill ' + cls; b.textContent = text; if (title) b.title = title; (typeof VeganLensBrand !== 'undefined' ? VeganLensBrand.mark : typeof require === 'function' ? require('./brand.js').mark : (e => e))(b, { compact: true }); el.appendChild(b); return b; }
   function dim(el, why) {
     el.classList.add('vl-mp-dim');

@@ -77,5 +77,5 @@ test('cleanup: undo removes swaps; links open in new tab with noopener', () => {
   assert.ok(/:scope > \.vl-swap/.test(c), 'clear() removes card swaps');
   assert.ok(/getElementById\('vl-banner'\)\?\.remove\(\)/.test(c), 'banner (with swap) removed');
   assert.ok(/target = '_blank'/.test(c) && /rel = 'noopener/.test(c));
-  assert.ok(/mark\(w, banner \? \{\} : \{ compact: true \}\)/.test(c) && /say\(S\.audience, 'swap'\)/.test(c) && /icons\/icon16\.png/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'brand.js'), 'utf8')));
+  assert.ok(/mark\(w, banner \? \{\} : \{ compact: true \}\)/.test(c) && /say\(S\.audience, 'swap'\)/.test(c) && /function icon\(/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'brand.js'), 'utf8')));
 });

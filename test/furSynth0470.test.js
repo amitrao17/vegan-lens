@@ -7,9 +7,9 @@ const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const P = { allowProbably: true };
 const TITLE = 'Womens Over The Knee High Boots Chunky Heel Slip On Faux Leather Riding Surgical Stretch Thigh High Boots';
 
-test('versions agree at 0.4.77', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.77');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.77');
+test('versions agree at 0.4.78', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.78');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.78');
 });
 
 test('Faux Leather title + Inner material Fur is Caution, not vegan', () => {

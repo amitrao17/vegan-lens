@@ -3,6 +3,7 @@
 (() => {
   'use strict';
   if (window.top !== window) return;
+  if (typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive && !VeganLensBrand.alive()) return; // 0.4.78: orphaned script after reload
   const R = window.VeganSearchRewrite, P = window.VeganPage, SW = window.VeganSwaps;
   const h = location.hostname;
   const isYT = /(^|\.)youtube\.com$/.test(h), isBing = /(^|\.)bing\.com$/.test(h);
@@ -47,6 +48,7 @@
   }
 
   function evaluate() {
+    if (typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive && !VeganLensBrand.alive()) return;
     if (location.href === lastHref) { place(); return; }
     lastHref = location.href;
     document.getElementById('vl-s-banner')?.remove();

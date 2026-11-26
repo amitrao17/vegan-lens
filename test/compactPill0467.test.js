@@ -62,9 +62,9 @@ function makeBadge(doc, S, cls, text, title, extra) {
   return b;
 }
 
-test('versions agree at 0.4.77', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.77');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.77');
+test('versions agree at 0.4.78', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.78');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.78');
 });
 
 test('compact default: icon-only pill, full text in tip + aria-label', () => {
@@ -82,7 +82,7 @@ test('compact default: icon-only pill, full text in tip + aria-label', () => {
   assert.match(b.getAttribute('aria-label'), /Probably vegan/);
   assert.doesNotMatch(b.getAttribute('aria-label') || '', /Sponsored/);
   assert.doesNotMatch(tip.textContent, /Sponsored/);
-  assert.ok(b.children.some(c => c.tagName === 'IMG' && /vl-mark-icon/.test(c.className)));
+  assert.ok(b.children.some(c => /^(?:IMG|SVG)$/.test(c.tagName) && /vl-mark-icon/.test(c.className || (c.getAttribute && c.getAttribute('class')) || '')));
   assert.equal(b.querySelector('.vl-badge-ad'), null);
   // Visible label lives in the tip, not as a bare text node competing with the icon.
   assert.ok(b.querySelector('.vl-badge-text'));

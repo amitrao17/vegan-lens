@@ -2,6 +2,8 @@
 (() => {
   'use strict';
   if (window.top !== window && !/youtube\.com$/.test(location.hostname)) return; // skip iframes (ads, widgets)
+  if (typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive && !VeganLensBrand.alive()) return; // 0.4.78: orphaned script after reload
+  const extAlive = () => !(typeof VeganLensBrand !== 'undefined' && VeganLensBrand.alive) || VeganLensBrand.alive();
   const A = window.VeganAdUnits, U = window.VeganWebUnits, C = window.VeganContentClassifier, T = window.VeganContextTopics, P = window.VeganPage, VP = window.VeganPeople;
   let PEOPLE = null, peopleIdx = null, peopleKey = '', peopleState = { counts: new Map() };
   let CARDS = null;
@@ -45,7 +47,7 @@
     try { console.log('[Vegan Lens]', path, (el && el.tagName || '').toLowerCase(), JSON.stringify((info && info.headline) || ''), info && info.verdict, info || {}, el); } catch (e) {}
   }
   const siteMatch = (list) => list.some(d => host === d || host.endsWith('.' + d));
-  const active = () => !(/(^|\.)facebook\.com$/.test(location.hostname) && /^\/marketplace(?:\/|$)/.test(location.pathname)) && S.webEnabled && // 0.4.48: marketplace.js owns Marketplace (also after SPA navigation)
+  const active = () => extAlive() && !(/(^|\.)facebook\.com$/.test(location.hostname) && /^\/marketplace(?:\/|$)/.test(location.pathname)) && S.webEnabled && // 0.4.48: marketplace.js owns Marketplace (also after SPA navigation)
      !siteMatch(S.siteBlock) && !P.isPageDisabled(S.pageBlock, location.href) && (!S.webAllowOnly || siteMatch(S.siteAllow));
 
   // Google rich results (recipes, top stories, videos, shopping): generic structure, not class names.
@@ -687,6 +689,7 @@
   let moTimer = null, moPending = [], moTouched = [];
   const mo = new MutationObserver(muts => {
     if (ownMut) return; // mutations we just wrote (chips, blur, classes)
+    if (!extAlive()) return;
     for (const m of muts) {
       const tg = m.target && (m.target.nodeType === 1 ? m.target : m.target.parentElement);
       if (tg && U.isVlUi(tg)) continue;

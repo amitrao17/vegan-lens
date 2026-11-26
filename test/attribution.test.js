@@ -11,7 +11,7 @@ function fakeDoc() {
     set textContent(v) { this.children = []; this._t = String(v); } });
   const doc = { createElement: mk }; return doc;
 }
-const isIcon = n => n && n.tagName === 'IMG' && /vl-mark-icon/.test(n.className) && n.getAttribute('width') === '16';
+const isIcon = n => n && /^(?:IMG|SVG)$/.test(n.tagName) && /vl-mark-icon/.test(n.className || (n.getAttribute && n.getAttribute('class')) || '') && n.getAttribute('width') === '16';
 test('mark(): icon16 + "Vegan Lens ·" + tooltip', () => {
   const d = fakeDoc(); const el = d.createElement('span'); el.textContent = 'Hidden: about beef';
   B.mark(el, { doc: d });
@@ -36,11 +36,13 @@ test('offers.element() and people pills are attributed', () => {
   const p = P.pillFor(d, { status: st, name: 'X', source: 'https://example.com' }, false);
   assert.equal(p.getAttribute('data-vl-attr'), '1'); assert.match(p.getAttribute('aria-label'), /Vegan Lens/);
 });
-test('icon16 is web-accessible and brand.js loads first in every content script group', () => {
+test('icon16 stays web-accessible, brand.js loads first, and the page mark does not use it', () => {
   const m = JSON.parse(R('manifest.json'));
-  assert.ok(m.web_accessible_resources.some(w => w.resources.includes('icons/icon16.png')));
+  const war = m.web_accessible_resources.find(w => w.resources.includes('icons/icon16.png'));
+  assert.ok(war); assert.ok(war.matches.includes('<all_urls>')); assert.ok(!war.use_dynamic_url);
   for (const cs of m.content_scripts) assert.equal(cs.js[0], 'brand.js');
   for (const c of ['content.css', 'web.css', 'marketplace.css', 'search.css', 'pharmacy.css']) assert.match(R(c), /\.vl-mark-icon\{width:16px/);
+  assert.doesNotMatch(R('brand.js'), /getURL\(|chrome-extension:/);
 });
 // Static guard: each UI root created in a content script must be passed through mark()/MARK() (or be a child of one).
 const ROOTS = {
