@@ -102,6 +102,36 @@
     return r.score > 0 && /\+plant|\+vegan|\+product:/i.test(reasons);
   }
   const isYouTubeHost = h => /(^|\.)youtube\.com$/.test(String(h || ''));
+  // 0.4.79: Reddit posts. Prefer the shreddit-post host (its post-title attribute is visible even when the
+  // title lives in shadow DOM) and never read a neighbouring post's text, alts or 'tag' chrome.
+  const isRedditHost = h => /(^|\.)reddit\.com$/.test(String(h || ''));
+  const REDDIT_POST = 'shreddit-post, div[data-testid=post-container], .thing.link';
+  function ownQuery(el, sel) {
+    if (!el || !el.querySelectorAll) return [];
+    try {
+      return [...el.querySelectorAll(sel)].filter(n => {
+        for (let p = n.parentElement; p && p !== el; p = p.parentElement) {
+          if (p.matches && p.matches(REDDIT_POST)) return false;
+        }
+        return true;
+      });
+    } catch (e) { return []; }
+  }
+  const decorativeAlt = t => /^(?:r\/\w+\s+)?(?:icon|avatar|logo|award|snoo|emoji|upvote|downvote|thumbnail|image)$/i.test(String(t || '').replace(/\s+/g, ' ').trim()) || /\b(?:subreddit icon|user avatar|profile (?:picture|photo)|award icon|community icon)\b/i.test(String(t || ''));
+  function redditParts(el) {
+    const post = (el.closest && el.closest(REDDIT_POST)) || (el.matches && el.matches(REDDIT_POST) ? el : (el.querySelector && el.querySelector(REDDIT_POST))) || el;
+    const titleAttr = (post.getAttribute && (post.getAttribute('post-title') || post.getAttribute('data-title'))) || '';
+    const titleEl = ownQuery(post, 'a[slot=title], [slot=title], [data-testid=post-title], a.title, h1, h2, h3, [role=heading]').find(n => clean(n.innerText != null ? n.innerText : n.textContent).length >= 8);
+    const headline = clean(titleAttr || (titleEl && (titleEl.innerText != null ? titleEl.innerText : titleEl.textContent)) || '').slice(0, 300);
+    const bodyEl = ownQuery(post, '[slot=text-body], [data-testid=post-content], .expando, .usertext-body')[0];
+    const snippet = bodyEl ? clean(bodyEl.innerText != null ? bodyEl.innerText : bodyEl.textContent).slice(0, 500)
+      : ownQuery(post, 'p').slice(0, 2).map(n => clean(n.innerText != null ? n.innerText : n.textContent)).filter(Boolean).join(' ').slice(0, 500);
+    const tags = [...new Set(ownQuery(post, '[data-testid*=flair i], [class*=flair i]').map(n => clean(n.innerText != null ? n.innerText : n.textContent)).filter(t => t && t.length <= 40))].slice(0, 6).join(', ');
+    const alt = ownQuery(post, 'img[alt]').map(i => clean(i.getAttribute && i.getAttribute('alt'))).filter(t => t && !decorativeAlt(t)).slice(0, 2).join(' ').slice(0, 200);
+    const community = (post.getAttribute && (post.getAttribute('subreddit-prefixed-name') || post.getAttribute('subreddit-name') || post.getAttribute('data-subreddit') || post.getAttribute('data-subreddit-prefixed') || post.getAttribute('data-community'))) || '';
+    const authorName = (post.getAttribute && (post.getAttribute('author') || post.getAttribute('data-author'))) || '';
+    return { headline, snippet, tags, alt, community, author: '', creators: authorName ? [authorName] : [] };
+  }
   // 0.4.72: parse the channel out of a YouTube title aria-label, including LIVE cards ("N watching") as well as views / time-ago.
   function channelFromAria(label) {
     const m = /\bby (.{3,60}?)(?: \d[\d,.]*[KMB]?\+? (?:views|watching)| \d+ (?:second|minute|hour|day|week|month|year)s? ago| LIVE\b|$)/i.exec(String(label || ''));
@@ -138,6 +168,8 @@
       if (videoIds(el).size > 1) return 'container';
       return 'unit';
     }
+    // A wrapper (article, feed row) around a shreddit-post: classify the post, not the wrapper.
+    if (el.matches && !el.matches(REDDIT_POST) && el.querySelector && el.querySelector(REDDIT_POST)) return 'container';
     if (opts.unitSel && el.querySelectorAll(opts.unitSel).length >= 2) return 'container';
     return 'unit';
   }
@@ -187,10 +219,13 @@
     if (best.length < 8) { const i = el.querySelector('img[alt]'); const c = clean(i && i.getAttribute('alt')); if (c.length > best.length && !(FB_AUTO_ALT.test(c) && !altSays(c))) best = c.slice(0, 200); }
     return best;
   }
-  // Category / tag chips: Yelp category links (cflt= / find_desc=), [class*=categor] and [class*=tag] text. Short words only.
+  // Category / tag chips: Yelp category links (cflt= / find_desc=), [class*=categor], and chip-like tag/flair nodes.
+  // 0.4.79: do not scrape every class containing "tag" (that hits Reddit chrome and wrappers) or a neighbouring card.
+  const TAG_SEL = 'a[href*="cflt="], a[href*="find_desc="], [class*=categor i], [data-testid*=flair i], [class*=flair i], [data-baseweb=tag], a[class*=tag i], span[class*=tag i], li[class*=tag i], button[class*=tag i], [class="tag"], [class^="tag-"], [class$="-tag"]';
+  const TAG_CHROME = /^(?:share|shares?|comments?|up-?votes?|down-?votes?|awards?|give award|join(?:ed)?|follow|save|hide|report|crosspost|copy link|embed|more options|promoted|sponsored)$/i;
   function tagText(el) {
-    const n = [...el.querySelectorAll('a[href*="cflt="], a[href*="find_desc="], [class*=categor i], [class*=tag i]:not(a[href*="/biz/"])')];
-    return [...new Set(n.map(x => clean(x.innerText != null ? x.innerText : x.textContent)).filter(t => t && t.length <= 40))].slice(0, 6).join(', ');
+    const n = ownQuery(el, TAG_SEL).filter(x => !(x.closest && x.closest('a[href*="/biz/"]') && !x.closest('a[href*="cflt="], a[href*="find_desc="]')));
+    return [...new Set(n.map(x => clean(x.innerText != null ? x.innerText : x.textContent)).filter(t => t && t.length <= 40 && !TAG_CHROME.test(t)))].slice(0, 6).join(', ');
   }
   // Never render an empty chip: fall back to a category label.
   function chipLabel(text) { let t = clean(text); if (!/[a-z0-9]/i.test(t)) return 'Vegan Lens: animal products'; if (/(?:\babout|[:\u00b7])$/i.test(t)) t += ' animal products'; return t; }
@@ -400,7 +435,7 @@
     function reset() { queue = []; if (queued) queued.clear(); timer = null; runs = 0; processed = 0; added = 0; }
     return { add, flush, stats, reset, get pending() { return queue.length; } };
   }
-  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage, isVlUi, VL_UI_SEL, createScanBatcher };
+  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, isRedditHost, REDDIT_POST, ownQuery, decorativeAlt, redditParts, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage, isVlUi, VL_UI_SEL, createScanBatcher };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganWebUnits = api;
 })(typeof self !== 'undefined' ? self : this);

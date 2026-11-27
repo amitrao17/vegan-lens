@@ -1,3 +1,11 @@
+## 0.4.79
+
+Reddit: a grief post is no longer hidden as "about seafood".
+
+- The visible title and body of "How do you guys handle death?" from r/INTP do not mention seafood, and neither do words like "handle", "guys", "INTP" or "AMA". The hide came from how the card was read, not from those words: Reddit's feed can put a neighbouring post's text, a decorative icon alt, or incidental "tag" chrome into the same unit, and a strong snippet used to be enough to hide a card whose title had no animal evidence.
+- Each shreddit-post is now classified from its own `post-title` and body. Neighbour posts, icon/avatar alts, and catch-all class*="tag" wrappers are ignored. A wrapper around several posts is a container, not one giant card.
+- Reddit now uses the same "title must carry the evidence" rule as YouTube and Pinterest. A real seafood title ("Best shrimp tacos") still hides. Yelp category chips are unchanged.
+
 ## 0.4.78
 
 YouTube (and other pages) no longer try to load the Vegan Lens leaf from a chrome-extension URL.

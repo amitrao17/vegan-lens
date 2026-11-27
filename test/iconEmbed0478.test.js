@@ -18,9 +18,9 @@ const isMark = n => n && n.tagName === 'SVG' && /vl-mark-icon/.test(n.className 
 const PAGE_JS = ['brand.js', 'web.js', 'content.js', 'search.js', 'marketplace.js', 'productdb.js', 'pharmacy.js', 'offers.js', 'people.js', 'share.js', 'adUnits.js', 'webUnits.js', 'contentClassifier.js', 'classifier.js', 'swaps.js', 'pageKey.js', 'sites.js', 'brandSites.js', 'contextTopics.js', 'searchRewrite.js'];
 const PAGE_CSS = ['content.css', 'web.css', 'marketplace.css', 'search.css', 'pharmacy.css'];
 
-test('versions agree at 0.4.78', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.78');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.78');
+test('versions agree at 0.4.79', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.79');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.79');
 });
 
 test('mark() uses an inline SVG leaf, not a chrome-extension or http icon URL', () => {

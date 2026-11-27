@@ -7,9 +7,9 @@ const U = require('../webUnits.js');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const YT = { requireHeadline: true };
 
-test('versions agree at 0.4.78', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.78');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.78');
+test('versions agree at 0.4.79', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.79');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.79');
 });
 
 test('2,000 synthetic YouTube titles classify under 2000ms', () => {

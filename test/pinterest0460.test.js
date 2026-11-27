@@ -55,7 +55,7 @@ test('web.js wiring: pin unit selector, per-pin role, in-card chip, requireHeadl
   assert.match(s, /\.\.\.\(PIN \? \[U\.PIN_CARD\] : \[\]\)/);
   assert.match(s, /unitRole\(el, \{ youtube: YT, pinterest: PIN/);
   assert.match(s, /const inCard = YT \|\| PIN/);
-  assert.match(s, /requireHeadline: YT \|\| PIN \}/);
+  assert.match(s, /requireHeadline: YT \|\| PIN \|\| RD \}/);
   assert.match(s, /if \(PIN\) \{ const pp = U\.pinParts\(el\); return \{ \.\.\.pp, creators: creators\(el\) \}; \}/);
   assert.match(s, /if \(PIN\) \{ const card = n\.closest\(U\.PIN_CARD\)/);
   assert.match(s, /\[data-test-id\*=creator i\], \[data-test-id\*=pinner i\]/);

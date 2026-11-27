@@ -16,6 +16,7 @@
   const YT = U.isYouTubeHost(location.hostname);
   const PIN = U.isPinterestHost(location.hostname); // 0.4.60
   const UE = U.isUberEatsHost(location.hostname); // 0.4.66
+  const RD = U.isRedditHost(location.hostname); // 0.4.79
   const seen = new WeakSet();
   let ownMut = 0;
   function withOwnMutations(fn) {
@@ -80,10 +81,11 @@
     let headline = (h && (h.innerText || h.textContent) || el.getAttribute('aria-label') || '').trim().slice(0, 300);
     if (!headline && el.tagName === 'A') headline = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200); // product tile link
     if (headline.length < 8) headline = U.fallbackHeadline(el) || headline; // 0.4.45: image-first links (Zappos), aria-label titles
-    const tags = U.tagText(el); // 0.4.45: category chips (Yelp 'Steakhouses')
-    const snippet = [...el.querySelectorAll('p, .VwiC3b, [data-sncf], #description-text, .b_caption')].slice(0, 2).map(p => p.innerText || '').join(' ').slice(0, 500);
-    const alt = [...el.querySelectorAll('img[alt]')].slice(0, 2).map(i => i.alt).join(' ').slice(0, 200);
+    const tags = U.tagText(el); // 0.4.45: category chips (Yelp 'Steakhouses'); 0.4.79 bounded to this card
+    const snippet = U.ownQuery(el, 'p, .VwiC3b, [data-sncf], #description-text, .b_caption').slice(0, 2).map(p => p.innerText || '').join(' ').slice(0, 500);
+    const alt = U.ownQuery(el, 'img[alt]').map(i => i.alt || (i.getAttribute && i.getAttribute('alt')) || '').filter(t => t && !U.decorativeAlt(t)).slice(0, 2).join(' ').slice(0, 200);
     if (PIN) { const pp = U.pinParts(el); return { ...pp, creators: creators(el) }; } // 0.4.60
+    if (RD) { const rp = U.redditParts(el); return { ...rp, creators: [...(rp.creators || []), ...creators(el)] }; } // 0.4.79
     if (UE) return U.ueParts(el); // 0.4.66: name + description / cuisine tags only (no image-alt guessing)
     if (U.isFacebookHost(location.hostname)) {
       const x = U.fbExtraText(el);
@@ -299,10 +301,10 @@
     if (PIN && parts.headline.length < 8) { const h = U.pinAltHeadline(parts, U.pinSearchQuery(location), C.classify, S); if (h) { parts.headline = h; parts.alt = ''; } } // 0.4.61
     if (parts.headline.length < 8) { seen.delete(el); return; } // not rendered yet: retry on next mutation
     el._vlKey = unitKey(el, parts);
-    let r = C.classify(parts, { ...S, requireHeadline: YT || PIN });
+    let r = C.classify(parts, { ...S, requireHeadline: YT || PIN || RD });
     if (YT_CHANNEL() && !titleVerdicts.has(parts.headline)) { titleVerdicts.set(parts.headline, r.verdict); updatePageCtx(); }
     else if (!pageCtx.vegan && !headerChecked) { headerChecked = true; updatePageCtx(); } // non-channel pages: h1/top header once
-    if (pageCtx.vegan) r = C.classify(parts, { ...S, requireHeadline: YT || PIN, pageVegan: true });
+    if (pageCtx.vegan) r = C.classify(parts, { ...S, requireHeadline: YT || PIN || RD, pageVegan: true });
     if (r.verdict !== 'nonvegan') dbg('content', el, { headline: parts.headline, verdict: r.verdict, reasons: r.reasons, matches: r.matches });
     apply(el, r, T.detectTopics(parts));
   }
@@ -399,6 +401,7 @@
   function recheck(n) {
     if (n.nodeType !== 1) n = n.parentElement; if (!n || !n.closest) return;
     if (YT) { const card = n.closest(U.YT_CARD); if (card && !seen.has(card)) { processUnit(card); } }
+    if (RD) { const card = n.closest(U.REDDIT_POST); if (card && !seen.has(card)) processUnit(card); }
     if (UE) { const card = n.closest(U.UE_CARD); if (card && !seen.has(card)) processUnit(card); }
       if (PIN) { const card = n.closest(U.PIN_CARD); if (card && !seen.has(card) && !card.querySelector(U.PIN_BASE)) processUnit(card); } // 0.4.60 pins filled in after insert
     for (let u = n.closest('.vl-w-unit, [data-vl-ad]'); u; u = u.parentElement && u.parentElement.closest('.vl-w-unit, [data-vl-ad]')) audit(u);
@@ -643,6 +646,7 @@
     const units = unitsFrom(n);
     if (units.length) { for (const u of units) if (!seen.has(u)) processUnit(u); return; }
     if (YT) { const card = n.closest && n.closest(U.YT_CARD); if (card && !seen.has(card)) { processUnit(card); return; } }
+    if (RD) { const card = n.closest && n.closest(U.REDDIT_POST); if (card && !seen.has(card)) { processUnit(card); return; } }
     if (n.matches && n.matches(UNIT_SEL) && !seen.has(n)) processUnit(n);
   }
 
