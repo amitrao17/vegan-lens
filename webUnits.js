@@ -199,6 +199,8 @@
       // recipe / promo cards anywhere (Food Network o-PromoItem / m-MediaBlock, generic Card + /recipes/ link)
       '[class*=PromoItem]:has(a)', '[class*=MediaBlock]:has(h2 a, h3 a, h4 a, a h3, a h4)',
       '[class*=Card]:has(a[href*="/recipes/"])', 'li:has(a[href*="/recipes/"]):has(h2, h3, h4, [class*=Headline i])',
+      // 0.4.80: restaurant menu items (Owner.com ?item= links, schema.org MenuItem)
+      MENU_ITEM,
     ];
     if (/(^|\.)walmart\.com$/.test(h)) out.push('[data-item-id]:has(a[href*="/ip/"])', 'div[role=group]:has(a[href*="/ip/"])');
     if (/(^|\.)target\.com$/.test(h)) out.push('[data-test="@web/site-top-of-funnel/ProductCardWrapper"]', '[data-test*=ProductCard]:has(a[href*="/p/"])');
@@ -211,6 +213,32 @@
     .map(s => s + ':has(a[href]):has(img)').join(', ');
   const TITLE_SEL = '[data-automation-id=product-title], [data-test=product-title], [itemprop=name], [class*=Headline i]';
   const clean = t => String(t || '').replace(/\s+/g, ' ').trim();
+
+  // 0.4.80: restaurant / online-ordering menu cards. Stable hooks only (Owner.com ?item=, schema.org MenuItem).
+  const MENU_ITEM = 'a[href*="?item="], a[href*="&item="], [itemtype$="schema.org/MenuItem"], [itemtype$="MenuItem"], [data-testid="menu-item"], [data-testid^="menu-item-"]';
+  const SNIPPET_SEL = 'p, .VwiC3b, [data-sncf], #description-text, .b_caption, [itemprop=description], [data-testid*=description i], [data-testid*=item-description i], [class*=description i], [class*=item-desc i]';
+  const PRICE_RX = /(?:[$\u20ac\u00a3]\s?\d|\d[\d.,]*\s?(?:USD|EUR|GBP)\b)/;
+  function isMenuUnit(el) {
+    if (!el || !el.matches) return false;
+    if (el.matches(MENU_ITEM)) return true;
+    try { const n = el.querySelectorAll && el.querySelectorAll(MENU_ITEM).length; return n === 1; } catch (e) { return false; }
+  }
+  // Description of a priced menu/product card: prefer explicit description nodes, else the text
+  // between the item name and the first price (so add-on rows after the price are not read).
+  function ownDescription(el, headline) {
+    if (!el) return '';
+    const fromSel = ownQuery(el, SNIPPET_SEL).slice(0, 2).map(n => clean(n.innerText != null ? n.innerText : n.textContent)).filter(t => t && t.length >= 8);
+    if (fromSel.length) return fromSel.join(' ').slice(0, 500);
+    const raw = clean(el.innerText != null ? el.innerText : el.textContent);
+    if (!PRICE_RX.test(raw)) return '';
+    let t = raw;
+    const h = clean(headline);
+    if (h) { const i = t.indexOf(h); if (i >= 0) t = t.slice(i + h.length); }
+    const pm = t.match(PRICE_RX);
+    if (pm && pm.index >= 0) t = t.slice(0, pm.index);
+    t = clean(t);
+    return (t.length >= 20 && t.length <= 800) ? t.slice(0, 500) : '';
+  }
   // Headline when no heading element exists: longest link text / aria-label / title among the unit's links (<= 200).
   function fallbackHeadline(el) {
     let best = '';
@@ -435,7 +463,7 @@
     function reset() { queue = []; if (queued) queued.clear(); timer = null; runs = 0; processed = 0; added = 0; }
     return { add, flush, stats, reset, get pending() { return queue.length; } };
   }
-  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, isRedditHost, REDDIT_POST, ownQuery, decorativeAlt, redditParts, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage, isVlUi, VL_UI_SEL, createScanBatcher };
+  const api = { pinAltHeadline, pinSearchQuery, isPinterestHost, PIN_CARD, PIN_BASE, isPin, pinIds, pinParts, isUberEatsHost, UE_CARD, UE_ITEM, UE_STORE, isUeUnit, isUeMenuItem, isUeStoreCard, ueParts, ueCuisineTags, ueLikelyVegan, PRODUCT_TILE, contentUnit, unitText, CONTENT_UNIT, storeUnitSel, TITLE_SEL, fallbackHeadline, tagText, chipLabel, altSays, fbExtraText, fbAutoAlt, FB_AUTO_ALT, isFacebookHost, postGroup, postAuthor, YT_CARD, isYouTubeHost, isRedditHost, REDDIT_POST, ownQuery, decorativeAlt, redditParts, channelFromAria, videoIds, unitRole, multiCard, chipAttached, dimCheck, matchText, DIM_CLASSES, cardImages, ownsImage, isVlUi, VL_UI_SEL, createScanBatcher, MENU_ITEM, SNIPPET_SEL, PRICE_RX, isMenuUnit, ownDescription };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganWebUnits = api;
 })(typeof self !== 'undefined' ? self : this);

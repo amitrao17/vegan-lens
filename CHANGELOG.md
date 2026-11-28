@@ -1,3 +1,14 @@
+## 0.4.80
+
+Restaurant menus: dish descriptions are read, stated eggs and seafood in those descriptions count, and a "choice of" protein that includes tofu or vegetables no longer hides the whole dish.
+
+- Menu and other generic cards often put the description in a div or span, not a `<p>`, so extract() never saw "eggs", "shrimp" or "milk" on sites like Owner.com. Descriptions are now collected from description nodes and, on a priced card, from the text between the item name and the first price (add-on rows after the price are ignored).
+- In a dish listing, a stated ingredient in that description is primary evidence: Pad Thai or Pad See-Ew with eggs, Summer Rolls filled with shrimp, Thai Iced Tea made with milk, and Bangkok Noodles with shrimp, chicken and eggs are flagged. A news snippet still uses the weaker weight, so a stray "shrimp" in an article blurb is not enough on its own.
+- "Choice of chicken, pork, tofu or vegetables", "served with chicken, flank steak or tofu", "optional chicken", and "fried rice with egg for extra charge" are customizations, not proof the dish itself contains those animals. If every option is animal, the list still counts. Stated ingredients outside the list (eggs in Thai fried rice, egg noodles in khao soi) still count.
+- Squid, calamari, octopus and cuttlefish are seafood. Eggplant and coconut milk stay plant foods. Unstated traditional sauces (fish sauce, oyster sauce) are not invented as certain flags; they only count when the menu names them.
+
+- Fix: on Manow Thai's menu, Pad Thai, Pad See-Ew and Bangkok Noodles (and other description-only dishes) were missed, while choice-of-protein curries and stir-fries would have been over-flagged once those descriptions were read.
+
 ## 0.4.79
 
 Reddit: a grief post is no longer hidden as "about seafood".

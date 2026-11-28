@@ -8,9 +8,9 @@ const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const YT = { requireHeadline: true };
 const v = (t, c) => C.classify({ headline: t, creators: c }, YT);
 
-test('versions agree at 0.4.79', () => {
-  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.79');
-  assert.equal(JSON.parse(R('package.json')).version, '0.4.79');
+test('versions agree at 0.4.80', () => {
+  assert.equal(JSON.parse(R('manifest.json')).version, '0.4.80');
+  assert.equal(JSON.parse(R('package.json')).version, '0.4.80');
 });
 
 const FOOD = [

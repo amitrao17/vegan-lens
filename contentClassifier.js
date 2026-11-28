@@ -54,15 +54,75 @@
     for (const c of [].concat(creators || [])) { const n = String(c || '').replace(/^@/, '').trim(); if (n.length >= 3 && n.length <= 60) t = t.replace(new RegExp('@?' + esc(n).replace(/\s+/g, '\\s+'), 'gi'), ' _ '); }
     return t.replace(NAME_PAIR, ' _ ');
   }
+
+  // 0.4.80: a "choice of chicken, pork, tofu or vegetables" list is a customizable protein, not evidence
+  // that the dish itself contains meat. Same for "optional chicken" and "fried rice with egg for extra charge".
+  // If every option is animal, the list still counts. Stated ingredients outside the list still count.
+  const VEG_CHOICE = /\b(?:tofu|tofus|vegetables?|veggies|\bveg\b|plant[- ]based)\b/i;
+  const ANIMAL_CHOICE = /\b(?:chicken|pork|beef|shrimp|prawns?|seafood|fish|steak|flank\s+steak|turkey|duck|lamb|bacon|ham|squid|calamari|wings?|eggs?|meat|meats)\b/i;
+  const OPTION_ITEM = /^(?:(?:marinated|grilled|minced|steamed|fried|crispy|fresh|just|golden|sliced|butterflied|optional)\s+)*(?:tofu|tofus|vegetables?|veggies|veg|protein|proteins|meats?|chicken|pork|beef|shrimp|prawns?|seafood|fish|steak|flank\s+steak|turkey|duck|lamb|bacon|ham|squid|calamari|wings?|eggs?)\b/i;
+  function skipListSep(s, i) {
+    const n = s.length;
+    while (i < n && /[\s,;/_]/.test(s[i])) i++;
+    const rest = s.slice(i);
+    const sep = /^(?:and|or|\/)\s+/i.exec(rest);
+    if (sep) { i += sep[0].length; while (i < n && /[\s,;/_]/.test(s[i])) i++; }
+    return i;
+  }
+  function endOfOptionList(s, start) {
+    let i = skipListSep(s, start), end = start, found = 0;
+    while (i < s.length) {
+      i = skipListSep(s, i);
+      const m = OPTION_ITEM.exec(s.slice(i));
+      if (!m) break;
+      i += m[0].length;
+      end = i;
+      found++;
+    }
+    return found ? end : start;
+  }
+  function neutralizeMenuChoices(text, acc) {
+    let s = String(text || '');
+    s = s.replace(/\bsubstitut(?:e|ion)\s+for\b[^.!?]{0,80}?\b(?:fried rice\s+)?with\s+egg\b[^.!?]{0,50}?\b(?:extra|additional)\s+charge\b/gi, ' _ ');
+    s = s.replace(/\b(?:add(?:\s+an?)?\s+)?extra\s+charge\s+for\b[^.!?]{0,80}/gi, ' _ ');
+    s = s.replace(/\boptional\s+(?:the\s+)?(?:grilled\s+|minced\s+|fried\s+|steamed\s+)?(?:chicken|pork|beef|shrimp|prawns?|seafood|fish|eggs?|turkey|bacon|ham|lamb|duck|steak|squid|calamari|meat|meats)\b/gi, ' _ ');
+    const replaceChoice = (re, needBoth) => {
+      let out = '', last = 0, m;
+      re.lastIndex = 0;
+      while ((m = re.exec(s))) {
+        const listStart = m.index + m[0].length;
+        const listEnd = endOfOptionList(s, listStart);
+        if (listEnd <= listStart) continue;
+        const chunk = s.slice(m.index, listEnd);
+        const list = s.slice(listStart, listEnd);
+        const plant = VEG_CHOICE.test(chunk) || VEG_CHOICE.test(list);
+        const animal = ANIMAL_CHOICE.test(list);
+        if (!plant || (needBoth && !animal)) continue;
+        if (acc) acc.choiceCleared = true;
+        out += s.slice(last, m.index) + ' choice of protein ';
+        last = listEnd;
+      }
+      return last ? out + s.slice(last) : s;
+    };
+    s = replaceChoice(/\b(?:your\s+)?choice\s+of(?:\s+(?:meat|meats|protein|proteins|topping|toppings))?(?:\s+_+(?:\s+_+)*)?(?:\s+are)?/gi, false);
+    s = replaceChoice(/\bserved\s+with\b/gi, true);
+    return s;
+  }
   function classify(input, opts) {
     opts = opts || {};
     if (input && typeof input === 'object' && (communityVegan(input.community) || communityVegan(input.author))) opts = { ...opts, pageVegan: true, communityVegan: true };
     const thr = THRESH[opts.sensitivity] || THRESH.med;
     const parts = typeof input === 'string' ? { headline: input } : (input || {});
     // headline weighs double vs snippet/alt
-    const segs = [[parts.headline, 2, 'title'], [parts.tags, 1.5, 'tag'], [parts.snippet, 1, 'snippet'], [parts.alt, 0.75, 'alt'], [parts.author, 1, 'author']].filter(s => s[0]).map(s => [stripPeople(s[0], parts.creators), s[1], s[2]]).filter(s => String(s[0]).replace(/[\s_]+/g, '')); // 0.4.45 tags: category chips (strong). 0.4.73: author/page name too, so a vegan brand in the byline is scored.
+    // 0.4.80: a dish/menu listing's own description is primary evidence (eggs, milk, a named meat), not a weak news snippet.
+    const rawUnit = [parts.headline, parts.tags, parts.snippet, parts.alt].filter(Boolean).join(' ');
+    const dishListing = !!(parts.kind === 'dish' || opts.dish ||
+      /(?:[$\u20ac\u00a3]\s?\d|\d[\d.,]*\s?(?:USD|EUR|GBP)\b)/.test(rawUnit) ||
+      /\b(?:stir[- ]fried|stuffed with|filled with|tossed (?:in|with)|topped with|wrapped in|wok[- ]fired|deep[- ]fried)\b/i.test(String(parts.snippet || '')));
+    const segs = [[parts.headline, 2, 'title'], [parts.tags, 1.5, 'tag'], [parts.snippet, dishListing ? 2 : 1, 'snippet'], [parts.alt, 0.75, 'alt'], [parts.author, 1, 'author']].filter(s => s[0]).map(s => [stripPeople(s[0], parts.creators), s[1], s[2]]).filter(s => String(s[0]).replace(/[\s_]+/g, '')); // 0.4.45 tags: category chips (strong). 0.4.73: author/page name too, so a vegan brand in the byline is scored. 0.4.80: dish descriptions use title weight.
     let neg = 0, pos = 0, ethics = 0; const reasons = [], about = {};
     let veganHits = 0, headNeg = 0, rejects = 0, plantWord = false, headText = '', cultivated = false, cultivatedDish = false; const matches = [];
+    const choiceAcc = { choiceCleared: false };
     const unitText = segs.map(x => String(x[0]).toLowerCase()).join(' ');
     // 0.4.73: a dairy-free claim anywhere in the post/ad unit clears cheese/butter/brie/cream/milk words in every segment.
     // Kosher Pareve supports "not dairy" but is not vegan on its own (pareve can include eggs or fish).
@@ -76,6 +136,7 @@
     const plantUnit = PLANT_UNIT.test(unitText) && !/\b(?:exvegan|ex-vegan|antivegan|anti-vegan|non-?vegan)\b/.test(unitText);
     for (const [rawText, segW, where] of segs) {
       let t = ' ' + String(rawText).toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u2010-\u2015]/g, '-') + ' ';
+      t = neutralizeMenuChoices(t, choiceAcc);
       // "Always vegan" list: strong positive; strip the phrase so e.g. "Daiya cheese" isn't scored as dairy.
       if (Brands) for (const e of Brands.match(rawText, opts)) {
         pos += (e.user ? 4 : 3) * segW; reasons.push('+' + Brands.label(e));
@@ -144,7 +205,7 @@
       if (wearCtx && !matches.some(m => m.where === where && m.label === 'animal fabrics' && /leather|suede|nubuck/.test(m.term))) { const n = count(BARE_LEATHER, t); if (n) { BARE_LEATHER.lastIndex = 0; const m = BARE_LEATHER.exec(t); BARE_LEATHER.lastIndex = 0;
         matches.push({ term: m[0], label: 'animal fabrics', where, snippet: t.slice(Math.max(0, m.index - 30), m.index + m[0].length + 30).trim() }); segNeg += 2.5 * Math.min(n, 2); about['animal fabrics'] = (about['animal fabrics'] || 0) + 2.5 * n; reasons.push('-animal fabrics'); } }
       if (segNeg) { const b = count(BOOST, t); if (b) { segNeg *= 1 + 0.3 * Math.min(b, 3); reasons.push('-context boost'); } }
-      if (segW === 2) headNeg = segNeg;
+      if (where === 'title') headNeg = segNeg;
       neg += segNeg * segW / 2;
     }
     pos += veganHits * 3;
@@ -169,7 +230,7 @@
     const cookChannel = [].concat(parts.creators || [], parts.author || []).some(n => /\b(?:cook(?:ing|ery)|chef|kitchen|bbq|barbe(?:cue|que)|recipes?)\b/i.test(String(n || '')));
     const geoTitle = /\b(?:election|elections|ankara|istanbul|antalya|izmir|visa|lira|t[uü]rkiye|geopolitics|president|parliament|nato|earthquake|travel|vacation|tourism|protests?)\b/i.test(String(parts.headline || ''));
     const foodCtx = !!(AMBIG_FOOD_CTX && (AMBIG_FOOD_CTX.lastIndex = 0, AMBIG_FOOD_CTX.test(foodHead))) || (cookChannel && !geoTitle);
-    const headStrong = opts.sensitivity !== 'low' && matches.some(m => (m.where === 'title' || m.where === 'tag') && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:(?:grass|butter|goat|sheep|cow|skim|whole)?milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && (!/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) || foodCtx) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
+    const headStrong = opts.sensitivity !== 'low' && matches.some(m => (m.where === 'title' || m.where === 'tag' || (dishListing && m.where === 'snippet')) && (!/^(?:dairy\/eggs|honey)$/.test(m.label) || /^(?:(?:grass|butter|goat|sheep|cow|skim|whole)?milk|butter|eggs?|mayo|mayonnaise|honey|ghee|yogurt|aioli)$/.test(m.term)) && (!/^(?:turkey|duck|cod|bass|sole|ham|crab|wings?|nuggets?|jerky|bacon bits)$/.test(m.term) || foodCtx || dishListing) && (ANIMAL.find(a => a[2] === m.label) || [0, 0])[1] >= 1.5);
     const strongHead = matches.some(m => m.where === 'title' && STRONG_PAGE.test(m.label));
     if (opts.communityVegan) {
       // 0.4.74: a vegan group/author never hides a post, but "tried real steak again" is not a vegan verdict.
@@ -180,6 +241,10 @@
     else if (opts.pageVegan) { if (pos >= 3) verdict = 'vegan'; } // vegan page/channel: never dim; meaty words there mean plant versions
     else if ((neg >= thr || (headStrong && !rejects)) && neg > pos) verdict = 'nonvegan';
     else if (pos >= 3 && pos > neg) verdict = 'vegan';
+    // A "choice of chicken or tofu" dish is customizable, not itself vegan, unless the title says vegan.
+    if (verdict === 'vegan' && choiceAcc.choiceCleared && !/\bvegan\b/i.test(String(parts.headline || '')) && !(UNIT_VEGAN && UNIT_VEGAN.test(String(parts.headline || '')))) {
+      verdict = 'neutral'; reasons.push('protein choice includes a vegan option; dish is not inherently vegan');
+    }
     // 0.4.63 discussion rule: a title that asks/debates something about eating animal products (question form, debate,
     // ethics, religion/spiritual context) gets a light non-dimming label; titles that show the food itself (recipe, cooking
     // verb, mukbang/review/best, product/restaurant/deal, 'how to' + cooking verb) keep the normal verdict.
@@ -316,7 +381,7 @@
     try { Object.assign(api, { CAUTION_WEB, STYLE_MATERIALS, HEADER_VEGAN, THRESH }); } catch (e) { /* first run: api not built yet */ }
   }
   applyRules(Rules.data()); Rules.onChange(applyRules);
-  const api = { stripPeople, unitVegan, altBlur, cleanAlt, fbAutoAlt, ALT_HIGH, classify, shopCaution, CAUTION_WEB, STYLE_MATERIALS, communityVegan, pageContext, fabricQuery, HEADER_VEGAN, THRESH, LABEL_W };
+  const api = { stripPeople, unitVegan, altBlur, cleanAlt, fbAutoAlt, ALT_HIGH, classify, neutralizeMenuChoices, shopCaution, CAUTION_WEB, STYLE_MATERIALS, communityVegan, pageContext, fabricQuery, HEADER_VEGAN, THRESH, LABEL_W };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.VeganContentClassifier = api;
 })(typeof self !== 'undefined' ? self : this);

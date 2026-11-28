@@ -82,8 +82,11 @@
     if (!headline && el.tagName === 'A') headline = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200); // product tile link
     if (headline.length < 8) headline = U.fallbackHeadline(el) || headline; // 0.4.45: image-first links (Zappos), aria-label titles
     const tags = U.tagText(el); // 0.4.45: category chips (Yelp 'Steakhouses'); 0.4.79 bounded to this card
-    const snippet = U.ownQuery(el, 'p, .VwiC3b, [data-sncf], #description-text, .b_caption').slice(0, 2).map(p => p.innerText || '').join(' ').slice(0, 500);
+    // 0.4.80: menu/product descriptions often live in a div/span, not <p>; also text between the name and the price.
+    let snippet = U.ownQuery(el, U.SNIPPET_SEL).slice(0, 2).map(p => p.innerText || p.textContent || '').join(' ').slice(0, 500);
+    if (String(snippet || '').replace(/\s+/g, ' ').trim().length < 20) { const extra = U.ownDescription(el, headline); if (extra) snippet = extra; }
     const alt = U.ownQuery(el, 'img[alt]').map(i => i.alt || (i.getAttribute && i.getAttribute('alt')) || '').filter(t => t && !U.decorativeAlt(t)).slice(0, 2).join(' ').slice(0, 200);
+    const dishKind = !!(U.isMenuUnit && U.isMenuUnit(el));
     if (PIN) { const pp = U.pinParts(el); return { ...pp, creators: creators(el) }; } // 0.4.60
     if (RD) { const rp = U.redditParts(el); return { ...rp, creators: [...(rp.creators || []), ...creators(el)] }; } // 0.4.79
     if (UE) return U.ueParts(el); // 0.4.66: name + description / cuisine tags only (no image-alt guessing)
@@ -97,7 +100,7 @@
       else snippet = [snippet, body].filter(Boolean).join(' . ').slice(0, 1400);
       return { headline, tags, snippet, alt: [alt, x.alt].filter(Boolean).join(' . ').slice(0, 400), community: group || community(el), author };
     }
-    return { headline, tags, snippet, alt, community: community(el), author: '', creators: creators(el) };
+    return { headline, tags, snippet, alt, community: community(el), author: '', creators: creators(el), kind: dishKind ? 'dish' : undefined };
   }
   // 0.4.59: channel / creator / byline names in the unit; the classifier strips them (a name is not food evidence).
   const CREATOR_SEL = '[data-test-id*=creator i], [data-test-id*=pinner i], [data-test-id*=attribution i], [data-test-id*="user-name" i], [data-test-id*="board-name" i], ytd-channel-name, #channel-name, #byline, a[href^="/@"], a[href^="/channel/"], a[href^="/c/"], [itemprop=author], [rel=author], .byline, [class*=author i], [class*=byline i]';

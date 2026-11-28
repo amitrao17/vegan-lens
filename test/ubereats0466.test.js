@@ -131,7 +131,7 @@ test('web.js wiring: UE unit selector, role, in-card chip, ueParts, vegan/likely
 test('search assist on Uber Eats /search?q=, in the manifest; web.js still runs on ubereats', () => {
   assert.match(src('search.js'), /ubereats\\.com\$\/\.test\(h\) && \/\\\/search\(\?:\\\/\|\$\)\/\.test\(p\)\) return 'q'/);
   const m = JSON.parse(src('manifest.json'));
-  assert.equal(m.version, '0.4.79');
+  assert.equal(m.version, '0.4.80');
   const g = m.content_scripts.find(c => c.js.includes('search.js'));
   for (const pat of ['*://*.ubereats.com/search*', '*://ubereats.com/search*', '*://*.ubereats.com/*/search*'])
     assert.ok(g.matches.includes(pat), pat);
